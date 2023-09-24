@@ -34,6 +34,10 @@ export const QuakeMode = class {
 	}
 
 	get actor() {
+		if (!this.terminalWindow) {
+			return null;
+		}
+
 		const actor = this.terminalWindow.get_compositor_private();
 
 		if (!actor) {
