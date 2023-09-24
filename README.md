@@ -16,7 +16,7 @@ The GNOME Shell Extension - Quake Terminal allows you to launch a terminal appli
 
 You can easily install the extension from the GNOME Extensions website:
 
-[![Get it on GNOME Extensions](assets/get_it_on_gnome_extensions.png)](https://extensions.gnome.org/extension/5808/snx-vpn-indicator)
+[![Get it on GNOME Extensions](assets/get_it_on_gnome_extensions.png)](https://extensions.gnome.org/extension/6307/quake-terminal)
 
 ### Manual Installation
 If you prefer manual installation, follow these steps:
