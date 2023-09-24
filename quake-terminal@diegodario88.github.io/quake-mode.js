@@ -2,22 +2,25 @@ import Clutter from "gi://Clutter";
 import GLib from "gi://GLib";
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
 import { Workspace } from "resource:///org/gnome/shell/ui/workspace.js";
-import { on, once } from "./util.js";
-
-const TERMINAL_STATE = {
-	READY: Symbol("READY"),
-	STARTING: Symbol("STARTING"),
-	RUNNING: Symbol("RUNNING"),
-	DEAD: Symbol("DEAD"),
-};
+import { on, once, TERMINAL_STATE } from "./util.js";
 
 const ANIMATION_TIME_IN_MILLISECONDS = 250;
 
+/**
+ * Quake Mode Module
+ *
+ * This module provides a Quake mode for managing a terminal window with animations and specific behavior.
+ * It allows showing and hiding a terminal window with animation effects.
+ *
+ * @module QuakeMode
+ */
 export const QuakeMode = class {
 	constructor(terminal) {
 		this._terminal = terminal;
 		this._isTransitioning = false;
 		this._internalState = TERMINAL_STATE.READY;
+		this._sourceTimeoutLoopId = null;
+		this._terminalWindowUnmanagedId = null;
 	}
 
 	get terminalWindow() {
@@ -49,10 +52,25 @@ export const QuakeMode = class {
 	}
 
 	destroy() {
-		this._internalState = TERMINAL_STATE.DEAD;
+		if (this._sourceTimeoutLoopId) {
+			GLib.Source.remove(this._sourceTimeoutLoopId);
+			this._sourceTimeoutLoopId = null;
+		}
+
+		if (this._terminalWindowUnmanagedId && this.terminalWindow) {
+			this.terminalWindow.disconnect(this._terminalWindowUnmanagedId);
+			this._terminalWindowUnmanagedId = null;
+		}
+
 		this._terminal = null;
+		this._isTransitioning = false;
+		this._internalState = TERMINAL_STATE.DEAD;
 	}
 
+	/**
+	 * Toggles the visibility of the terminal window with animations.
+	 * @returns {Promise<void>} A promise that resolves when the toggle operation is complete.
+	 */
 	async toggle() {
 		if (this._internalState === TERMINAL_STATE.READY) {
 			try {
@@ -84,13 +102,18 @@ export const QuakeMode = class {
 		Main.activateWindow(this.terminalWindow);
 	}
 
+	/**
+	 * Launches the terminal window and sets up event handlers.
+	 * @returns {Promise<boolean>} A promise that resolves when the terminal window is ready.
+	 */
 	_launchTerminalWindow() {
 		this._internalState = TERMINAL_STATE.STARTING;
 		this._terminal.open_new_window(-1);
 
 		return new Promise((resolve, reject) => {
 			const shellAppWindowsChangedHandler = () => {
-				GLib.source_remove(timer);
+				GLib.Source.remove(this._sourceTimeoutLoopId);
+				this._sourceTimeoutLoopId = null;
 
 				if (this._terminal.get_n_windows() < 1) {
 					return reject(
@@ -98,27 +121,35 @@ export const QuakeMode = class {
 					);
 				}
 
-				this._setupTerminalWindowAlwaysAboveOthers(true);
+				this._setupTerminalWindowAlwaysAboveOthers();
 				this._setupOverrideWorkspaceOverviewToHideTerminalWindow();
 
-				once(this.terminalWindow, "unmanaged", () => this.destroy());
+				this._terminalWindowUnmanagedId = this.terminalWindow.connect(
+					"unmanaged",
+					() => this.destroy()
+				);
+
 				resolve(true);
 			};
 
-			const shellAppSignal = once(
-				this._terminal,
-				"windows-changed",
-				shellAppWindowsChangedHandler
-			);
+			once(this._terminal, "windows-changed", shellAppWindowsChangedHandler);
 
-			const timer = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 5000, () => {
-				shellAppSignal.off();
-				reject(new Error(`launch '${this._terminal.id}' timeout`));
-				return true;
-			});
+			this._sourceTimeoutLoopId = GLib.timeout_add_seconds(
+				GLib.PRIORITY_DEFAULT,
+				5,
+				() => {
+					shellAppSignal.off();
+					reject(new Error(`launch '${this._terminal.id}' timeout`));
+					return GLib.SOURCE_REMOVE;
+				}
+			);
 		});
 	}
 
+	/**
+	 * Adjusts the terminal window's initial position and handles signal connections related
+	 * to window mapping and sizing.
+	 */
 	_adjustTerminalWindowPosition() {
 		this.actor.set_clip(0, 0, this.actor.width, 0);
 		this.terminalWindow.stick();
@@ -131,6 +162,10 @@ export const QuakeMode = class {
 			sig.off();
 			wm.emit("kill-window-effects", this.actor);
 
+			/**
+			 * Listens once for the `size-changed(Meta.Window)` signal, which is emitted when the size of the toplevel
+			 * window has changed, or when the size of the client window has changed.
+			 */
 			once(this.terminalWindow, "size-changed", () => {
 				this._internalState = TERMINAL_STATE.RUNNING;
 				this.actor.remove_clip();
@@ -143,12 +178,20 @@ export const QuakeMode = class {
 		on(global.window_manager, "map", mapSignalHandler);
 	}
 
-	_showTerminalWithAnimationTopDown() {
+	_shouldAvoidAnimation() {
 		if (this._internalState !== TERMINAL_STATE.RUNNING) {
-			return;
+			return true;
 		}
 
 		if (this._isTransitioning) {
+			return true;
+		}
+
+		return false;
+	}
+
+	_showTerminalWithAnimationTopDown() {
+		if (this._shouldAvoidAnimation()) {
 			return;
 		}
 
@@ -168,7 +211,7 @@ export const QuakeMode = class {
 		this.actor.ease({
 			translation_y: 0,
 			duration: ANIMATION_TIME_IN_MILLISECONDS,
-			mode: Clutter.AnimationMode.EASE_OUT_QUART,
+			mode: Clutter.AnimationMode.EASE_OUT_QUAD,
 			onComplete: () => {
 				this._isTransitioning = false;
 			},
@@ -178,11 +221,7 @@ export const QuakeMode = class {
 	}
 
 	_hideTerminalWithAnimationBottomUp() {
-		if (this._internalState !== TERMINAL_STATE.RUNNING) {
-			return;
-		}
-
-		if (this._isTransitioning) {
+		if (this._shouldAvoidAnimation()) {
 			return;
 		}
 
@@ -191,7 +230,7 @@ export const QuakeMode = class {
 		this.actor.ease({
 			translation_y: this.actor.height * -1,
 			duration: ANIMATION_TIME_IN_MILLISECONDS,
-			mode: Clutter.AnimationMode.EASE_IN_QUART,
+			mode: Clutter.AnimationMode.EASE_IN_QUAD,
 			onComplete: () => {
 				Main.wm.skipNextEffect(this.actor);
 				this.actor.meta_window.minimize();
