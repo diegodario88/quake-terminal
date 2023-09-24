@@ -22,21 +22,14 @@ import Meta from "gi://Meta";
 import Shell from "gi://Shell";
 import { Extension } from "resource:///org/gnome/shell/extensions/extension.js";
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
+import { TERMINAL_STATE } from "./util.js";
 import { QuakeMode } from "./quake-mode.js";
 
 export default class TogglerExtension extends Extension {
 	enable() {
 		this._settings = this.getSettings();
-		const terminalId = this._settings.get_string("terminal-id");
-		const appSys = Shell.AppSystem.get_default();
-		const terminal = appSys.lookup_app(terminalId);
-
-		if (!terminal) {
-			console.warn(`No terminal found with id ${id}. Skipping ...`);
-			return;
-		}
-
-		this._quakeMode = new QuakeMode(terminal);
+		this._appSystem = Shell.AppSystem.get_default();
+		this._quakeMode = null;
 
 		Main.wm.addKeybinding(
 			"terminal-shortcut",
@@ -45,13 +38,36 @@ export default class TogglerExtension extends Extension {
 			Shell.ActionMode.NORMAL |
 				Shell.ActionMode.OVERVIEW |
 				Shell.ActionMode.POPUP,
-			() => this._quakeMode.toggle()
+			() => this._handleQuakeModeTerminal()
 		);
 	}
 
 	disable() {
 		Main.wm.removeKeybinding("terminal-shortcut");
+		this._quakeMode.destroy();
 		this._settings = null;
+		this._appSystem = null;
 		this._quakeMode = null;
+	}
+
+	_handleQuakeModeTerminal() {
+		if (
+			this._quakeMode &&
+			this._quakeMode._internalState !== TERMINAL_STATE.DEAD
+		) {
+			return this._quakeMode.toggle();
+		}
+
+		const terminalId = this._settings.get_string("terminal-id");
+		const terminal = this._appSystem.lookup_app(terminalId);
+
+		if (!terminal) {
+			console.warn(`No terminal found with id ${id}. Skipping ...`);
+			return;
+		}
+
+		this._quakeMode = new QuakeMode(terminal);
+
+		return this._quakeMode.toggle();
 	}
 }
