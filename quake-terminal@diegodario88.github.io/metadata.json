@@ -1,7 +1,7 @@
 {
     "uuid": "quake-terminal@diegodario88.github.io",
     "name": "Quake Terminal",
-    "description": "Launch a terminal em quake mode via a keyboard shortcut",
+    "description": "Quickly launch a terminal in Quake mode using a keyboard shortcut",
     "shell-version": ["45"],
     "settings-schema": "org.gnome.shell.extensions.quake-terminal",
     "url": "https://github.com/diegodario88/quake-terminal"
