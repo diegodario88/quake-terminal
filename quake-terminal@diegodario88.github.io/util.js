@@ -1,3 +1,5 @@
+import GObject from "gi://GObject";
+
 /**
  * Signal Connector
  *
@@ -40,7 +42,19 @@ export class SignalConnector {
 	 * @returns {void}
 	 */
 	off() {
-		this.target.disconnect(this.id);
+		const matchedId = GObject.signal_handler_find(
+			this.target,
+			GObject.SignalMatchType.ID,
+			this.id,
+			null,
+			null,
+			null,
+			null
+		);
+
+		if (matchedId) {
+			this.target.disconnect(this.id);
+		}
 	}
 }
 

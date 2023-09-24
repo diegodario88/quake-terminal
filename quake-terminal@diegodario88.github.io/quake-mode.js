@@ -21,6 +21,12 @@ export const QuakeMode = class {
 		this._internalState = TERMINAL_STATE.READY;
 		this._sourceTimeoutLoopId = null;
 		this._terminalWindowUnmanagedId = null;
+
+		/**
+		 * An array that stores signal connections. Used to disconnect when destroy (disable) is called.
+		 * @type {Array<import("./util.js").SignalConnector>}
+		 */
+		this._connectedSignals = [];
 	}
 
 	get terminalWindow() {
@@ -62,6 +68,8 @@ export const QuakeMode = class {
 			this._terminalWindowUnmanagedId = null;
 		}
 
+		this._connectedSignals.forEach((s) => s.off());
+		this._connectedSignals = [];
 		this._terminal = null;
 		this._isTransitioning = false;
 		this._internalState = TERMINAL_STATE.DEAD;
@@ -132,7 +140,13 @@ export const QuakeMode = class {
 				resolve(true);
 			};
 
-			once(this._terminal, "windows-changed", shellAppWindowsChangedHandler);
+			const windowsChangedSignalConnector = once(
+				this._terminal,
+				"windows-changed",
+				shellAppWindowsChangedHandler
+			);
+
+			this._connectedSignals.push(windowsChangedSignalConnector);
 
 			this._sourceTimeoutLoopId = GLib.timeout_add_seconds(
 				GLib.PRIORITY_DEFAULT,
@@ -166,16 +180,27 @@ export const QuakeMode = class {
 			 * Listens once for the `size-changed(Meta.Window)` signal, which is emitted when the size of the toplevel
 			 * window has changed, or when the size of the client window has changed.
 			 */
-			once(this.terminalWindow, "size-changed", () => {
-				this._internalState = TERMINAL_STATE.RUNNING;
-				this.actor.remove_clip();
-				this._showTerminalWithAnimationTopDown();
-			});
+			const sizeChangedSignalConnector = once(
+				this.terminalWindow,
+				"size-changed",
+				() => {
+					this._internalState = TERMINAL_STATE.RUNNING;
+					this.actor.remove_clip();
+					this._showTerminalWithAnimationTopDown();
+				}
+			);
 
+			this._connectedSignals.push(sizeChangedSignalConnector);
 			this._fitTerminalToMainMonitor();
 		};
 
-		on(global.window_manager, "map", mapSignalHandler);
+		const mapSignalConnector = on(
+			global.window_manager,
+			"map",
+			mapSignalHandler
+		);
+
+		this._connectedSignals.push(mapSignalConnector);
 	}
 
 	_shouldAvoidAnimation() {
