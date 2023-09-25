@@ -2,7 +2,7 @@
 <schemalist>
   <schema id="org.gnome.shell.extensions.quake-terminal" path="/org/gnome/shell/extensions/quake-terminal/">
     <key name="terminal-id" type="s">
-      <default>"Alacritty.desktop"</default>
+			<default>"org.gnome.Terminal.desktop"</default>
     </key>
     <key name="terminal-shortcut" type="as">
       <default><![CDATA[['<Super>Return']]]></default>
