@@ -30,6 +30,10 @@ export const QuakeMode = class {
 	}
 
 	get terminalWindow() {
+		if (!this._terminal) {
+			return null;
+		}
+
 		return this._terminal.get_windows()[0];
 	}
 
@@ -156,7 +160,6 @@ export const QuakeMode = class {
 				GLib.PRIORITY_DEFAULT,
 				5,
 				() => {
-					shellAppSignal.off();
 					reject(new Error(`launch '${this._terminal.id}' timeout`));
 					return GLib.SOURCE_REMOVE;
 				}
@@ -238,9 +241,9 @@ export const QuakeMode = class {
 		Main.activateWindow(this.actor.meta_window);
 
 		this.actor.ease({
+			mode: Clutter.AnimationMode.EASE_IN_QUAD,
 			translation_y: 0,
 			duration: ANIMATION_TIME_IN_MILLISECONDS,
-			mode: Clutter.AnimationMode.EASE_OUT_QUAD,
 			onComplete: () => {
 				this._isTransitioning = false;
 			},
@@ -257,9 +260,9 @@ export const QuakeMode = class {
 		this.isTransition = true;
 
 		this.actor.ease({
+			mode: Clutter.AnimationMode.EASE_OUT_QUAD,
 			translation_y: this.actor.height * -1,
 			duration: ANIMATION_TIME_IN_MILLISECONDS,
-			mode: Clutter.AnimationMode.EASE_IN_QUAD,
 			onComplete: () => {
 				Main.wm.skipNextEffect(this.actor);
 				this.actor.meta_window.minimize();
