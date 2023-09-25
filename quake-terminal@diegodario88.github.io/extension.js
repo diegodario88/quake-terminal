@@ -20,7 +20,10 @@
 
 import Meta from "gi://Meta";
 import Shell from "gi://Shell";
-import { Extension } from "resource:///org/gnome/shell/extensions/extension.js";
+import {
+	Extension,
+	gettext as _,
+} from "resource:///org/gnome/shell/extensions/extension.js";
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
 import { TERMINAL_STATE } from "./util.js";
 import { QuakeMode } from "./quake-mode.js";
@@ -62,7 +65,7 @@ export default class TogglerExtension extends Extension {
 		const terminal = this._appSystem.lookup_app(terminalId);
 
 		if (!terminal) {
-			console.warn(`No terminal found with id ${id}. Skipping ...`);
+			Main.notify(_(`No terminal found with id ${id}. Skipping ...`));
 			return;
 		}
 
