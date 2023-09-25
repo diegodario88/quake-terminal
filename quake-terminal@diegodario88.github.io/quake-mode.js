@@ -1,7 +1,6 @@
 import Clutter from "gi://Clutter";
 import GLib from "gi://GLib";
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
-import { Workspace } from "resource:///org/gnome/shell/ui/workspace.js";
 import { on, once, TERMINAL_STATE } from "./util.js";
 
 const ANIMATION_TIME_IN_MILLISECONDS = 250;
@@ -137,8 +136,7 @@ export const QuakeMode = class {
 					);
 				}
 
-				this._setupTerminalWindowAlwaysAboveOthers();
-				this._setupOverrideWorkspaceOverviewToHideTerminalWindow();
+				this._setupHideFromOverviewAndAltTab();
 
 				this._terminalWindowUnmanagedId = this.terminalWindow.connect(
 					"unmanaged",
@@ -288,19 +286,17 @@ export const QuakeMode = class {
 		);
 	}
 
-	_setupTerminalWindowAlwaysAboveOthers() {
-		this.terminalWindow.make_above();
-	}
+	_setupHideFromOverviewAndAltTab() {
+		const terminalWindow = this.terminalWindow;
 
-	_setupOverrideWorkspaceOverviewToHideTerminalWindow() {
-		const matchTerminalWindow = (window) => this.terminalWindow === window;
+		Object.defineProperty(terminalWindow, "skip_taskbar", {
+			get() {
+				if (terminalWindow) {
+					return true;
+				}
 
-		Workspace.prototype._isOverviewWindow = (window) => {
-			if (matchTerminalWindow(window)) {
-				return false;
-			}
-
-			return !window.skip_taskbar;
-		};
+				return this.is_skip_taskbar();
+			},
+		});
 	}
 };
