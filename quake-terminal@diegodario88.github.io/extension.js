@@ -65,7 +65,7 @@ export default class TogglerExtension extends Extension {
 		const terminal = this._appSystem.lookup_app(terminalId);
 
 		if (!terminal) {
-			Main.notify(_(`No terminal found with id ${id}. Skipping ...`));
+			Main.notify(_(`No terminal found with id ${terminalId}. Skipping ...`));
 			return;
 		}
 
