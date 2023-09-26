@@ -137,6 +137,7 @@ export const QuakeMode = class {
 				}
 
 				this._setupHideFromOverviewAndAltTab();
+				this.terminalWindow.make_above();
 
 				this._terminalWindowUnmanagedId = this.terminalWindow.connect(
 					"unmanaged",
