@@ -123,6 +123,11 @@ export const QuakeMode = class {
 	 */
 	_launchTerminalWindow() {
 		this._internalState = TERMINAL_STATE.STARTING;
+
+		if (!this._terminal) {
+			return Promise.reject(new Error("No Terminal APP"));
+		}
+
 		this._terminal.open_new_window(-1);
 
 		return new Promise((resolve, reject) => {
@@ -171,6 +176,10 @@ export const QuakeMode = class {
 	 * to window mapping and sizing.
 	 */
 	_adjustTerminalWindowPosition() {
+		if (!this.terminalWindow || !this.actor) {
+			return;
+		}
+
 		this.actor.set_clip(0, 0, this.actor.width, 0);
 		this.terminalWindow.stick();
 
@@ -215,6 +224,10 @@ export const QuakeMode = class {
 		}
 
 		if (this._isTransitioning) {
+			return true;
+		}
+
+		if (!this.actor) {
 			return true;
 		}
 
@@ -272,6 +285,10 @@ export const QuakeMode = class {
 	}
 
 	_fitTerminalToMainMonitor() {
+		if (!this.terminalWindow) {
+			return;
+		}
+
 		const mainMonitorScreen = global.display.get_n_monitors() - 1;
 		const area =
 			this.terminalWindow.get_work_area_for_monitor(mainMonitorScreen);

@@ -55,21 +55,20 @@ export default class TogglerExtension extends Extension {
 
 	_handleQuakeModeTerminal() {
 		if (
-			this._quakeMode &&
-			this._quakeMode._internalState !== TERMINAL_STATE.DEAD
+			!this._quakeMode ||
+			this._quakeMode._internalState === TERMINAL_STATE.DEAD
 		) {
+			const terminalId = this._settings.get_string("terminal-id");
+			const terminal = this._appSystem.lookup_app(terminalId);
+
+			if (!terminal) {
+				Main.notify(_(`No terminal found with id ${terminalId}. Skipping ...`));
+				return;
+			}
+
+			this._quakeMode = new QuakeMode(terminal);
 			return this._quakeMode.toggle();
 		}
-
-		const terminalId = this._settings.get_string("terminal-id");
-		const terminal = this._appSystem.lookup_app(terminalId);
-
-		if (!terminal) {
-			Main.notify(_(`No terminal found with id ${terminalId}. Skipping ...`));
-			return;
-		}
-
-		this._quakeMode = new QuakeMode(terminal);
 
 		return this._quakeMode.toggle();
 	}
