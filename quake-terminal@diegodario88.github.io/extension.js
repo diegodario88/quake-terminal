@@ -47,6 +47,9 @@ export default class TogglerExtension extends Extension {
 
 	disable() {
 		Main.wm.removeKeybinding("terminal-shortcut");
+		if (Main.sessionMode.currentMode === "unlock-dialog") {
+			return;
+		}
 		this._quakeMode.destroy();
 		this._settings = null;
 		this._appSystem = null;
