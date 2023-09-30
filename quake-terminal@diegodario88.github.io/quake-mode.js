@@ -14,18 +14,24 @@ const ANIMATION_TIME_IN_MILLISECONDS = 250;
  * @module QuakeMode
  */
 export const QuakeMode = class {
-	constructor(terminal) {
+	constructor(terminal, settings) {
 		this._terminal = terminal;
+		this._settings = settings;
 		this._isTransitioning = false;
 		this._internalState = TERMINAL_STATE.READY;
 		this._sourceTimeoutLoopId = null;
 		this._terminalWindowUnmanagedId = null;
+		this._settingsWatching = null;
 
 		/**
 		 * An array that stores signal connections. Used to disconnect when destroy (disable) is called.
 		 * @type {Array<import("./util.js").SignalConnector>}
 		 */
 		this._connectedSignals = [];
+
+		this._settingsWatching = settings.connect("changed::vertical-size", () => {
+			this._fitTerminalToMainMonitor();
+		});
 	}
 
 	get terminalWindow() {
@@ -68,6 +74,10 @@ export const QuakeMode = class {
 		if (this._sourceTimeoutLoopId) {
 			GLib.Source.remove(this._sourceTimeoutLoopId);
 			this._sourceTimeoutLoopId = null;
+		}
+
+		if (this._settingsWatching && this._settings) {
+			this._settings.disconnect(this._settingsWatching);
 		}
 
 		if (this._terminalWindowUnmanagedId && this.terminalWindow) {
@@ -290,8 +300,15 @@ export const QuakeMode = class {
 		}
 
 		const mainMonitorScreen = global.display.get_n_monitors() - 1;
+
 		const area =
 			this.terminalWindow.get_work_area_for_monitor(mainMonitorScreen);
+
+		const verticalSettingsValue = this._settings.get_int("vertical-size");
+
+		const terminalHeight = Math.round(
+			(verticalSettingsValue * area.height) / 100
+		);
 
 		this.terminalWindow.move_to_monitor(mainMonitorScreen);
 
@@ -300,7 +317,7 @@ export const QuakeMode = class {
 			area.x,
 			area.y,
 			area.width,
-			area.height
+			terminalHeight
 		);
 	}
 

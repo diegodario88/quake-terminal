@@ -6,9 +6,9 @@ import Gtk from "gi://Gtk";
 export default class TogglerPreferences extends ExtensionPreferences {
 	fillPreferencesWindow(window) {
 		const settings = this.getSettings();
-
 		const page = new Adw.PreferencesPage();
 		const group = new Adw.PreferencesGroup();
+
 		page.add(group);
 
 		// App ID
@@ -58,6 +58,26 @@ export default class TogglerPreferences extends ExtensionPreferences {
 
 		rowShortcut.add_suffix(entryShortcut);
 		rowShortcut.activatable_widget = entryShortcut;
+
+		// SpinRow
+		const spinRow = new Adw.SpinRow({
+			title: "Vertical Size",
+			subtitle: "How far the terminal will go down",
+			adjustment: new Gtk.Adjustment({
+				lower: 25,
+				"step-increment": 25,
+				upper: 100,
+				value: settings.get_int("vertical-size"),
+			}),
+		});
+		group.add(spinRow);
+
+		spinRow.connect("changed", () => {
+			settings.set_int("vertical-size", spinRow.get_value());
+		});
+		settings.connect("changed::vertical-size", () => {
+			spinRow.set_value(settings.get_int("vertical-size"));
+		});
 
 		settings.connect("changed::terminal-shortcut-text", () => {
 			const shortcutText = settings.get_string("terminal-shortcut-text");

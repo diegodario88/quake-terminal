@@ -50,7 +50,11 @@ export default class TogglerExtension extends Extension {
 		if (Main.sessionMode.currentMode === "unlock-dialog") {
 			return;
 		}
-		this._quakeMode.destroy();
+
+		if (this._quakeMode) {
+			this._quakeMode.destroy();
+		}
+
 		this._settings = null;
 		this._appSystem = null;
 		this._quakeMode = null;
@@ -69,7 +73,7 @@ export default class TogglerExtension extends Extension {
 				return;
 			}
 
-			this._quakeMode = new QuakeMode(terminal);
+			this._quakeMode = new QuakeMode(terminal, this._settings);
 			return this._quakeMode.toggle();
 		}
 

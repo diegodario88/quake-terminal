@@ -10,5 +10,9 @@
     <key name="terminal-shortcut-text" type="s">
       <default><![CDATA['<Super>Return']]></default>
     </key>
+		<key name="vertical-size" type="i">
+      <summary>How far vertical the terminal will drop</summary>
+      <default>50</default>
+    </key>
   </schema>
 </schemalist>
