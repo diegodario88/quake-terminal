@@ -1,7 +1,7 @@
 import Clutter from "gi://Clutter";
 import GLib from "gi://GLib";
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
-import { on, once, TERMINAL_STATE } from "./util.js";
+import { on, once, SHELL_APP_STATE, TERMINAL_STATE } from "./util.js";
 
 const ANIMATION_TIME_IN_MILLISECONDS = 250;
 
@@ -22,6 +22,10 @@ export const QuakeMode = class {
 		this._sourceTimeoutLoopId = null;
 		this._terminalWindowUnmanagedId = null;
 		this._settingsWatching = null;
+
+		if (this._terminal.state === SHELL_APP_STATE.RUNNING) {
+			this._internalState = TERMINAL_STATE.RUNNING;
+		}
 
 		/**
 		 * An array that stores signal connections. Used to disconnect when destroy (disable) is called.
@@ -97,7 +101,10 @@ export const QuakeMode = class {
 	 * @returns {Promise<void>} A promise that resolves when the toggle operation is complete.
 	 */
 	async toggle() {
-		if (this._internalState === TERMINAL_STATE.READY) {
+		if (
+			this._internalState === TERMINAL_STATE.READY ||
+			this._terminal.state === SHELL_APP_STATE.STOPPED
+		) {
 			try {
 				await this._launchTerminalWindow();
 				this._adjustTerminalWindowPosition();

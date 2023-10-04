@@ -106,3 +106,9 @@ export const TERMINAL_STATE = {
 	RUNNING: Symbol("RUNNING"),
 	DEAD: Symbol("DEAD"),
 };
+
+export const SHELL_APP_STATE = {
+	STOPPED: 0,
+	STARTING: 1,
+	RUNNING: 2,
+};
