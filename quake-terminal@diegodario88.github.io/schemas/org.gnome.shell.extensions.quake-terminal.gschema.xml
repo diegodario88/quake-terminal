@@ -3,16 +3,19 @@
   <schema id="org.gnome.shell.extensions.quake-terminal" path="/org/gnome/shell/extensions/quake-terminal/">
     <key name="terminal-id" type="s">
 			<default>"org.gnome.Terminal.desktop"</default>
+			<summary>Terminal App</summary>
+      <description>The application path used as a reference when initializing a new terminal</description>
     </key>
-    <key name="terminal-shortcut" type="as">
-      <default><![CDATA[['<Super>Return']]]></default>
-    </key>
-    <key name="terminal-shortcut-text" type="s">
-      <default><![CDATA['<Super>Return']]></default>
-    </key>
+		<key name="terminal-shortcut" type="as">
+			<default><![CDATA[['<Super>Return']]]></default>
+			<summary>Toggle Terminal</summary>
+			<description>Shortcut to activate the terminal application</description>
+		</key>
 		<key name="vertical-size" type="i">
-      <summary>How far vertical the terminal will drop</summary>
-      <default>50</default>
-    </key>
-  </schema>
+  		<default>50</default>
+  		<summary>Terminal Size</summary>
+  		<description>Specify the vertical descent distance for the terminal as a percentage</description>
+		</key>
+	</schema>
 </schemalist>
+

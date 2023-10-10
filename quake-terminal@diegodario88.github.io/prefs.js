@@ -1,19 +1,40 @@
-import { ExtensionPreferences } from "resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js";
 import Adw from "gi://Adw";
+import Gdk from "gi://Gdk";
 import Gio from "gi://Gio";
 import Gtk from "gi://Gtk";
+import {
+	ExtensionPreferences,
+	gettext as _,
+} from "resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js";
 
-export default class TogglerPreferences extends ExtensionPreferences {
+const isValidAccel$1 = (mask, keyval) => {
+	return (
+		Gtk.accelerator_valid(keyval, mask) ||
+		(keyval === Gdk.KEY_Tab && mask !== 0)
+	);
+};
+
+const isValidBinding$1 = (mask, keycode, keyval) => {
+	return mask !== 0 && keycode !== 0 && mask & ~Gdk.ModifierType.SHIFT_MASK;
+};
+
+export default class QuakeTerminalPreferences extends ExtensionPreferences {
 	fillPreferencesWindow(window) {
 		const settings = this.getSettings();
+
 		const page = new Adw.PreferencesPage();
+		page.set_title(_("Quake Terminal"));
+		page.set_name("quake-terminal-preferences");
+
 		const group = new Adw.PreferencesGroup();
+		group.set_title(_("Settings"));
+		group.set_name("settings-group");
 
 		page.add(group);
 
 		// App ID
 		const rowId = new Adw.ActionRow({
-			title: "Terminal App ID",
+			title: _("Terminal App ID"),
 			subtitle: "/usr/share/applications/",
 		});
 		group.add(rowId);
@@ -36,33 +57,92 @@ export default class TogglerPreferences extends ExtensionPreferences {
 		rowId.activatable_widget = entryId;
 
 		// Shortcut
+		const shortcutId = "terminal-shortcut";
 		const rowShortcut = new Adw.ActionRow({
-			title: "Toggle Shortcut",
-			subtitle: "&lt;special_key&gt;regular_key",
+			title: _("Toggle Shortcut"),
+			subtitle: _("Shortcut to activate the terminal application"),
 		});
+
+		const shortcutLabel = new Gtk.ShortcutLabel({
+			disabled_text: _("Select a shortcut"),
+			accelerator: settings.get_strv(shortcutId)[0] ?? "<Control>backslash",
+			valign: Gtk.Align.CENTER,
+			halign: Gtk.Align.CENTER,
+		});
+
+		settings.connect(`changed::${shortcutId}`, () => {
+			shortcutLabel.set_accelerator(settings.get_strv(shortcutId)[0]);
+		});
+
+		rowShortcut.connect("activated", () => {
+			const ctl = new Gtk.EventControllerKey();
+
+			const statusPage = new Adw.StatusPage({
+				description: _("Enter new shortcut to toggle Quake Terminal"),
+				icon_name: "preferences-desktop-keyboard-shortcuts-symbolic",
+			});
+
+			const toolbarView = new Adw.ToolbarView({
+				content: statusPage,
+			});
+
+			const headerBar = new Adw.HeaderBar({
+				title_widget: new Adw.WindowTitle({
+					title: _("Set Shortcut"),
+				}),
+			});
+
+			toolbarView.add_top_bar(headerBar);
+
+			const editor = new Adw.Window({
+				modal: true,
+				transient_for: page.get_root(),
+				hide_on_close: true,
+				width_request: 400,
+				height_request: 300,
+				resizable: false,
+				content: toolbarView,
+			});
+
+			editor.add_controller(ctl);
+			ctl.connect("key-pressed", (_, keyval, keycode, state) => {
+				let mask = state & Gtk.accelerator_get_default_mod_mask();
+				mask &= ~Gdk.ModifierType.LOCK_MASK;
+
+				if (
+					!mask &&
+					(keyval === Gdk.KEY_Escape || keyval === Gdk.KEY_BackSpace)
+				) {
+					editor.close();
+					return Gdk.EVENT_STOP;
+				}
+
+				if (
+					!isValidBinding$1(mask, keycode, keyval) ||
+					!isValidAccel$1(mask, keyval)
+				) {
+					return Gdk.EVENT_STOP;
+				}
+
+				settings.set_strv(shortcutId, [
+					Gtk.accelerator_name_with_keycode(null, keyval, keycode, mask),
+				]);
+
+				editor.destroy();
+				return Gdk.EVENT_STOP;
+			});
+
+			editor.present();
+		});
+
+		rowShortcut.add_suffix(shortcutLabel);
+		rowShortcut.activatable_widget = shortcutLabel;
 		group.add(rowShortcut);
 
-		const entryShortcut = new Gtk.Entry({
-			placeholder_text: "<Super>Return",
-			text: settings.get_string("terminal-shortcut-text"),
-			valign: Gtk.Align.CENTER,
-			hexpand: true,
-		});
-
-		settings.bind(
-			"terminal-shortcut-text",
-			entryShortcut,
-			"text",
-			Gio.SettingsBindFlags.DEFAULT
-		);
-
-		rowShortcut.add_suffix(entryShortcut);
-		rowShortcut.activatable_widget = entryShortcut;
-
-		// SpinRow
+		// Vertical Size as percentage
 		const spinRow = new Adw.SpinRow({
-			title: "Vertical Size",
-			subtitle: "How far the terminal will go down",
+			title: _("Vertical Size"),
+			subtitle: _("Terminal descent distance as a percentage"),
 			adjustment: new Gtk.Adjustment({
 				lower: 25,
 				"step-increment": 25,
@@ -77,19 +157,6 @@ export default class TogglerPreferences extends ExtensionPreferences {
 		});
 		settings.connect("changed::vertical-size", () => {
 			spinRow.set_value(settings.get_int("vertical-size"));
-		});
-
-		settings.connect("changed::terminal-shortcut-text", () => {
-			const shortcutText = settings.get_string("terminal-shortcut-text");
-			const [success, key, mods] = Gtk.accelerator_parse(shortcutText);
-
-			if (success && Gtk.accelerator_valid(key, mods)) {
-				const shortcut = Gtk.accelerator_name(key, mods);
-				settings.set_strv("terminal-shortcut", [shortcut]);
-			} else {
-				console.warn(`Invalid shortcut, ${shortcutText}`);
-				settings.set_strv("terminal-shortcut", []);
-			}
 		});
 
 		window.add(page);
