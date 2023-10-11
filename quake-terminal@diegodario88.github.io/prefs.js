@@ -1,11 +1,30 @@
 import Adw from "gi://Adw";
-import Gdk from "gi://Gdk";
+import GObject from "gi://GObject";
+import Gdk from "gi://Gdk?version=4.0";
 import Gio from "gi://Gio";
 import Gtk from "gi://Gtk";
 import {
 	ExtensionPreferences,
 	gettext as _,
 } from "resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js";
+
+const getConnectedMonitorsList = () => {
+	const monitors = [];
+
+	const display = Gdk.Display.get_default();
+	if (display && "get_monitors" in display) {
+		const monitorsAvailable = display.get_monitors();
+
+		for (let idx = 0; idx < monitorsAvailable.get_n_items(); idx++) {
+			const monitor = monitorsAvailable.get_item(idx);
+			monitors.push(monitor);
+		}
+	} else {
+		console.warn(`Could not get monitor list from Display of type ${display}`);
+	}
+
+	return monitors;
+};
 
 const isValidAccel$1 = (mask, keyval) => {
 	return (
@@ -17,6 +36,32 @@ const isValidAccel$1 = (mask, keyval) => {
 const isValidBinding$1 = (mask, keycode, keyval) => {
 	return mask !== 0 && keycode !== 0 && mask & ~Gdk.ModifierType.SHIFT_MASK;
 };
+
+const MonitorScreen = GObject.registerClass(
+	{
+		Properties: {
+			name: GObject.ParamSpec.string(
+				"name",
+				"name",
+				"name",
+				GObject.ParamFlags.READWRITE,
+				null
+			),
+			value: GObject.ParamSpec.int(
+				"value",
+				"value",
+				"value",
+				GObject.ParamFlags.READWRITE,
+				null
+			),
+		},
+	},
+	class MonitorScreen extends GObject.Object {
+		_init(name, value) {
+			super._init({ name, value });
+		}
+	}
+);
 
 export default class QuakeTerminalPreferences extends ExtensionPreferences {
 	fillPreferencesWindow(window) {
@@ -157,6 +202,35 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 		});
 		settings.connect("changed::vertical-size", () => {
 			spinRow.set_value(settings.get_int("vertical-size"));
+		});
+
+		// Monitor Screen
+		const monitorScreenModel = new Gio.ListStore({
+			item_type: MonitorScreen,
+		});
+
+		const monitorScreens = getConnectedMonitorsList();
+
+		for (const [idx, monitor] of monitorScreens.entries()) {
+			const monitorScreen = new MonitorScreen(
+				`${monitor.model}`.toUpperCase(),
+				idx
+			);
+			monitorScreenModel.append(monitorScreen);
+		}
+
+		const monitorRow = new Adw.ComboRow({
+			title: _("Monitor Screen"),
+			subtitle: _("Which monitor the terminal should be rendered"),
+			model: monitorScreenModel,
+			expression: new Gtk.PropertyExpression(MonitorScreen, null, "name"),
+			selected: settings.get_int("monitor-screen"),
+		});
+
+		group.add(monitorRow);
+
+		monitorRow.connect("notify::selected", () => {
+			settings.set_int("monitor-screen", monitorRow.selected);
 		});
 
 		window.add(page);

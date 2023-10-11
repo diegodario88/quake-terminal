@@ -306,7 +306,12 @@ export const QuakeMode = class {
 			return;
 		}
 
-		const mainMonitorScreen = global.display.get_n_monitors() - 1;
+		let mainMonitorScreen = this._settings.get_int("monitor-screen");
+		const maxNumberOfMonitors = global.display.get_n_monitors() - 1;
+
+		if (mainMonitorScreen > maxNumberOfMonitors) {
+			mainMonitorScreen = maxNumberOfMonitors;
+		}
 
 		const area =
 			this.terminalWindow.get_work_area_for_monitor(mainMonitorScreen);

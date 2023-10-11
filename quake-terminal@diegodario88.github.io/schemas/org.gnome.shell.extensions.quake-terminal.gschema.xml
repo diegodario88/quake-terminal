@@ -16,6 +16,11 @@
   		<summary>Terminal Size</summary>
   		<description>Specify the vertical descent distance for the terminal as a percentage</description>
 		</key>
+		<key name="monitor-screen" type="i">
+			<default>0</default>
+			<summary>Monitor Screen</summary>
+  		<description>Specify the monitor screen where the terminal should be rendered</description>
+		</key>
 	</schema>
 </schemalist>
 
