@@ -1,6 +1,6 @@
 import Adw from "gi://Adw";
 import GObject from "gi://GObject";
-import Gdk from "gi://Gdk?version=4.0";
+import Gdk from "gi://Gdk";
 import Gio from "gi://Gio";
 import Gtk from "gi://Gtk";
 import {
@@ -26,14 +26,35 @@ const getConnectedMonitorsList = () => {
 	return monitors;
 };
 
-const isValidAccel$1 = (mask, keyval) => {
+const keyvalIsAllowed = (keyval) => {
+	return [
+		Gdk.KEY_F1,
+		Gdk.KEY_F2,
+		Gdk.KEY_F3,
+		Gdk.KEY_F4,
+		Gdk.KEY_F5,
+		Gdk.KEY_F6,
+		Gdk.KEY_F7,
+		Gdk.KEY_F8,
+		Gdk.KEY_F9,
+		Gdk.KEY_F10,
+		Gdk.KEY_F11,
+		Gdk.KEY_F12,
+	].includes(keyval);
+};
+
+const isValidAccel = (mask, keyval) => {
 	return (
 		Gtk.accelerator_valid(keyval, mask) ||
 		(keyval === Gdk.KEY_Tab && mask !== 0)
 	);
 };
 
-const isValidBinding$1 = (mask, keycode, keyval) => {
+const isValidBinding = (mask, keycode, keyval) => {
+	if (keyvalIsAllowed(keyval)) {
+		return true;
+	}
+
 	return mask !== 0 && keycode !== 0 && mask & ~Gdk.ModifierType.SHIFT_MASK;
 };
 
@@ -163,8 +184,8 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 				}
 
 				if (
-					!isValidBinding$1(mask, keycode, keyval) ||
-					!isValidAccel$1(mask, keyval)
+					!isValidBinding(mask, keycode, keyval) ||
+					!isValidAccel(mask, keyval)
 				) {
 					return Gdk.EVENT_STOP;
 				}
