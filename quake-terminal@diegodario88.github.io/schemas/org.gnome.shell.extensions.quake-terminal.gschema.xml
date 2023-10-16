@@ -13,13 +13,29 @@
 		</key>
 		<key name="vertical-size" type="i">
   		<default>50</default>
-  		<summary>Terminal Size</summary>
-  		<description>Specify the vertical descent distance for the terminal as a percentage</description>
+  		<summary>Terminal Vertical Size</summary>
+  		<description>Specify the vertical size of the terminal in percentage</description>
+		</key>
+		<key name="horizontal-size" type="i">
+  		<default>100</default>
+  		<summary>Terminal Horizontal Size</summary>
+  		<description>Specify the horizontal size of the terminal in percentage</description>
+		</key>
+		<key name="horizontal-alignment" type="i">
+			<range min="0" max="2" />
+			<default>2</default>
+			<summary>Terminal Horizontal Alignment</summary>
+			<description>Control the value for horizontal alignment</description>
 		</key>
 		<key name="monitor-screen" type="i">
 			<default>0</default>
 			<summary>Monitor Screen</summary>
   		<description>Specify the monitor screen where the terminal should be rendered</description>
+		</key>
+		<key name="auto-hide-window" type="b">
+			<default>false</default>
+			<summary>Auto Hide Terminal</summary>
+  		<description>When enabled, this hides the Terminal window when it loses focus</description>
 		</key>
 	</schema>
 </schemalist>

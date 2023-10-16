@@ -21,7 +21,7 @@ export const QuakeMode = class {
 		this._internalState = TERMINAL_STATE.READY;
 		this._sourceTimeoutLoopId = null;
 		this._terminalWindowUnmanagedId = null;
-		this._settingsWatching = null;
+		this._terminalWindowFocusId = null;
 
 		if (this._terminal.state === SHELL_APP_STATE.RUNNING) {
 			this._internalState = TERMINAL_STATE.RUNNING;
@@ -32,10 +32,20 @@ export const QuakeMode = class {
 		 * @type {Array<import("./util.js").SignalConnector>}
 		 */
 		this._connectedSignals = [];
+		this._settingsWatchingListIds = [];
 
-		this._settingsWatching = settings.connect("changed::vertical-size", () => {
-			this._fitTerminalToMainMonitor();
-		});
+		["vertical-size", "horizontal-size", "horizontal-alignment"].forEach(
+			(prefAdjustment) => {
+				const settingsId = settings.connect(
+					`changed::${prefAdjustment}`,
+					() => {
+						this._fitTerminalToMainMonitor();
+					}
+				);
+
+				this._settingsWatchingListIds.push(settingsId);
+			}
+		);
 	}
 
 	get terminalWindow() {
@@ -80,8 +90,10 @@ export const QuakeMode = class {
 			this._sourceTimeoutLoopId = null;
 		}
 
-		if (this._settingsWatching && this._settings) {
-			this._settings.disconnect(this._settingsWatching);
+		if (this._settingsWatchingListIds.length && this._settings) {
+			this._settingsWatchingListIds.forEach((id) => {
+				this._settings.disconnect(id);
+			});
 		}
 
 		if (this._terminalWindowUnmanagedId && this.terminalWindow) {
@@ -89,8 +101,14 @@ export const QuakeMode = class {
 			this._terminalWindowUnmanagedId = null;
 		}
 
+		if (this._terminalWindowFocusId && this.terminalWindow) {
+			this.terminalWindow.disconnect(this._terminalWindowFocusId);
+			this._terminalWindowFocusId = null;
+		}
+
 		this._connectedSignals.forEach((s) => s.off());
 		this._connectedSignals = [];
+		this._settingsWatchingListIds = [];
 		this._terminal = null;
 		this._isTransitioning = false;
 		this._internalState = TERMINAL_STATE.DEAD;
@@ -123,7 +141,7 @@ export const QuakeMode = class {
 			return;
 		}
 
-		if (this.terminalWindow.has_focus()) {
+		if (this.terminalWindow.has_focus() || !this.terminalWindow.minimized) {
 			return this._hideTerminalWithAnimationBottomUp();
 		}
 
@@ -164,6 +182,13 @@ export const QuakeMode = class {
 				this._terminalWindowUnmanagedId = this.terminalWindow.connect(
 					"unmanaged",
 					() => this.destroy()
+				);
+
+				this._terminalWindowFocusId = global.display.connectObject(
+					"notify::focus-window",
+					() => {
+						this._handleHideOnFocusLoss();
+					}
 				);
 
 				resolve(true);
@@ -317,18 +342,33 @@ export const QuakeMode = class {
 			this.terminalWindow.get_work_area_for_monitor(mainMonitorScreen);
 
 		const verticalSettingsValue = this._settings.get_int("vertical-size");
+		const horizontalSettingsValue = this._settings.get_int("horizontal-size");
+
+		const horizontalAlignmentSettingsValue = this._settings.get_int(
+			"horizontal-alignment"
+		);
 
 		const terminalHeight = Math.round(
 			(verticalSettingsValue * area.height) / 100
 		);
+		const terminalWidth = Math.round(
+			(horizontalSettingsValue * area.width) / 100
+		);
+
+		const terminalX =
+			area.x +
+			Math.round(
+				horizontalAlignmentSettingsValue &&
+					(area.width - terminalWidth) / horizontalAlignmentSettingsValue
+			);
 
 		this.terminalWindow.move_to_monitor(mainMonitorScreen);
 
 		this.terminalWindow.move_resize_frame(
 			false,
-			area.x,
+			terminalX,
 			area.y,
-			area.width,
+			terminalWidth,
 			terminalHeight
 		);
 	}
@@ -345,5 +385,25 @@ export const QuakeMode = class {
 				return this.is_skip_taskbar();
 			},
 		});
+	}
+
+	_handleHideOnFocusLoss() {
+		const shouldAutoHide = this._settings.get_boolean("auto-hide-window");
+
+		if (!shouldAutoHide) {
+			return;
+		}
+
+		const focusedWindow = global.display.focus_window;
+
+		if (!focusedWindow) {
+			return;
+		}
+
+		if (focusedWindow === this.terminalWindow) {
+			return;
+		}
+
+		this._hideTerminalWithAnimationBottomUp();
 	}
 };
