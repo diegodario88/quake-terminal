@@ -376,6 +376,7 @@ export const QuakeMode = class {
 
 				return this.is_skip_taskbar();
 			},
+			configurable: true
 		});
 	}
 
