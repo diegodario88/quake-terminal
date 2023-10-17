@@ -231,7 +231,6 @@ export const QuakeMode = class {
 		}
 
 		this.actor.set_clip(0, 0, this.actor.width, 0);
-		this.terminalWindow.stick();
 
 		const mapSignalHandler = (sig, wm, metaWindowActor) => {
 			if (metaWindowActor !== this.actor) {
