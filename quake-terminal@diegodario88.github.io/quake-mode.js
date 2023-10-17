@@ -17,7 +17,6 @@ export const QuakeMode = class {
 	constructor(terminal, settings) {
 		this._terminal = terminal;
 		this._settings = settings;
-		this._isTransitioning = false;
 		this._internalState = TERMINAL_STATE.READY;
 		this._sourceTimeoutLoopId = null;
 		this._terminalWindowUnmanagedId = null;
@@ -119,7 +118,6 @@ export const QuakeMode = class {
 		this._connectedSignals = [];
 		this._settingsWatchingListIds = [];
 		this._terminal = null;
-		this._isTransitioning = false;
 		this._internalState = TERMINAL_STATE.DEAD;
 	}
 
@@ -280,10 +278,6 @@ export const QuakeMode = class {
 			return true;
 		}
 
-		if (this._isTransitioning) {
-			return true;
-		}
-
 		if (!this.actor) {
 			return true;
 		}
@@ -302,7 +296,6 @@ export const QuakeMode = class {
 			return;
 		}
 
-		this._isTransitioning = true;
 		parent.set_child_above_sibling(this.actor, null);
 		this.actor.translation_y = this.actor.height * -1;
 
@@ -312,10 +305,7 @@ export const QuakeMode = class {
 		this.actor.ease({
 			mode: Clutter.AnimationMode.EASE_IN_QUAD,
 			translation_y: 0,
-			duration: ANIMATION_TIME_IN_MILLISECONDS,
-			onComplete: () => {
-				this._isTransitioning = false;
-			},
+			duration: ANIMATION_TIME_IN_MILLISECONDS
 		});
 
 		this._fitTerminalToMainMonitor();
@@ -326,8 +316,6 @@ export const QuakeMode = class {
 			return;
 		}
 
-		this.isTransition = true;
-
 		this.actor.ease({
 			mode: Clutter.AnimationMode.EASE_OUT_QUAD,
 			translation_y: this.actor.height * -1,
@@ -336,7 +324,6 @@ export const QuakeMode = class {
 				Main.wm.skipNextEffect(this.actor);
 				this.actor.meta_window.minimize();
 				this.actor.translation_y = 0;
-				this._isTransitioning = false;
 			},
 		});
 	}
