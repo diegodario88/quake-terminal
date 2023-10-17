@@ -21,6 +21,7 @@ export const QuakeMode = class {
 		this._sourceTimeoutLoopId = null;
 		this._terminalWindowUnmanagedId = null;
 		this._terminalWindowFocusId = null;
+		this.terminalWindow = undefined;
 
 		if (this._terminal.state === SHELL_APP_STATE.RUNNING) {
 			this._internalState = TERMINAL_STATE.RUNNING;
@@ -54,14 +55,6 @@ export const QuakeMode = class {
 		);
 
 		this._settingsWatchingListIds.push(alwaysOnTopSettingsId);
-	}
-
-	get terminalWindow() {
-		if (!this._terminal) {
-			return null;
-		}
-
-		return this._terminal.get_windows()[0];
 	}
 
 	get actor() {
@@ -181,6 +174,8 @@ export const QuakeMode = class {
 						`app '${this._terminal.id}' is launched but no windows`
 					);
 				}
+
+				this.terminalWindow = this._terminal.get_windows()[0];
 
 				this._setupHideFromOverviewAndAltTab();
 				this._handleAlwaysOnTop();
