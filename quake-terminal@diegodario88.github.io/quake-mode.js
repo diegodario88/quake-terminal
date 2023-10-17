@@ -141,7 +141,7 @@ export const QuakeMode = class {
 			return;
 		}
 
-		if (this.terminalWindow.has_focus() || !this.terminalWindow.minimized) {
+		if (this.terminalWindow.has_focus() && !this.terminalWindow.minimized) {
 			return this._hideTerminalWithAnimationBottomUp();
 		}
 
