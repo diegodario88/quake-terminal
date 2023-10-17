@@ -172,7 +172,6 @@ export const QuakeMode = class {
 			return Promise.reject(new Error("No Terminal APP"));
 		}
 
-		this._terminal.open_new_window(-1);
 
 		return new Promise((resolve, reject) => {
 			const shellAppWindowsChangedHandler = () => {
@@ -219,6 +218,8 @@ export const QuakeMode = class {
 					return GLib.SOURCE_REMOVE;
 				}
 			);
+
+			this._terminal.open_new_window(-1);
 		});
 	}
 
