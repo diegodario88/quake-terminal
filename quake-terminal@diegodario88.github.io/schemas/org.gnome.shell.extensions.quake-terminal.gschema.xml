@@ -42,6 +42,11 @@
 			<summary>Always On Top</summary>
   		<description>When enabled, terminal window will appear on top of all other non-topmost windows</description>
 		</key>
+		<key name="animation-time" type="i">
+				<default>250</default>
+				<summary>Animation time</summary>
+				<description>Duration of the dropdown animation in milliseconds</description>
+		</key>
 	</schema>
 </schemalist>
 

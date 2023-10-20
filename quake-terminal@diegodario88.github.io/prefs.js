@@ -224,6 +224,25 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 			settings.set_int("monitor-screen", monitorRow.selected);
 		});
 
+		// Animation Time
+		const animationTime = new Adw.SpinRow({
+			title: _("Animation Time"),
+			subtitle: _("Duration of the dropdown animation in milliseconds"),
+			adjustment: new Gtk.Adjustment({
+				lower: 0,
+				"step-increment": 5,
+				upper: 500,
+				value: settings.get_int("animation-time"),
+			}),
+		});
+		generalSettingsGroup.add(animationTime);
+		animationTime.connect("changed", () => {
+			settings.set_int("animation-time", animationTime.get_value());
+		});
+		settings.connect("changed::animation-time", () => {
+			animationTime.set_value(settings.get_int("animation-time"));
+		});
+
 		// Position Group Settings
 		const positionSettingsGroup = new Adw.PreferencesGroup();
 		positionSettingsGroup.set_title(_("Position"));

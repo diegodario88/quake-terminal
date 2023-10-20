@@ -3,9 +3,7 @@ import GLib from "gi://GLib";
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
 import * as Util from "./util.js";
 
-const ANIMATION_TIME_IN_MILLISECONDS = 250;
 const STARTUP_TIMER_IN_SECONDS = 1;
-
 /**
  * Quake Mode Module
  *
@@ -308,7 +306,10 @@ export const QuakeMode = class {
 		this.actor.ease({
 			mode: Clutter.AnimationMode.EASE_IN_QUAD,
 			translation_y: 0,
-			duration: ANIMATION_TIME_IN_MILLISECONDS,
+			duration: this._settings.get_int("animation-time"),
+			onComplete: () => {
+				this._isTransitioning = false;
+			},
 		});
 
 		this._fitTerminalToMainMonitor();
@@ -322,7 +323,7 @@ export const QuakeMode = class {
 		this.actor.ease({
 			mode: Clutter.AnimationMode.EASE_OUT_QUAD,
 			translation_y: this.actor.height * -1,
-			duration: ANIMATION_TIME_IN_MILLISECONDS,
+			duration: this._settings.get_int("animation-time"),
 			onComplete: () => {
 				Main.wm.skipNextEffect(this.actor);
 				this.actor.meta_window.minimize();
@@ -364,7 +365,7 @@ export const QuakeMode = class {
 			area.x +
 			Math.round(
 				horizontalAlignmentSettingsValue &&
-					(area.width - terminalWidth) / horizontalAlignmentSettingsValue
+				(area.width - terminalWidth) / horizontalAlignmentSettingsValue
 			);
 
 		this.terminalWindow.move_to_monitor(mainMonitorScreen);
