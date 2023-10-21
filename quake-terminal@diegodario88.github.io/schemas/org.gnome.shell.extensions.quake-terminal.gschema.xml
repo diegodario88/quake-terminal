@@ -33,9 +33,14 @@
   		<description>Specify the monitor screen where the terminal should be rendered</description>
 		</key>
 		<key name="auto-hide-window" type="b">
-			<default>false</default>
+			<default>true</default>
 			<summary>Auto Hide Terminal</summary>
   		<description>When enabled, this hides the Terminal window when it loses focus</description>
+		</key>
+		<key name="always-on-top" type="b">
+			<default>false</default>
+			<summary>Always On Top</summary>
+  		<description>When enabled, terminal window will appear on top of all other non-topmost windows</description>
 		</key>
 	</schema>
 </schemalist>

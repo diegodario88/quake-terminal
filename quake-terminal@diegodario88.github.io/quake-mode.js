@@ -46,6 +46,15 @@ export const QuakeMode = class {
 				this._settingsWatchingListIds.push(settingsId);
 			}
 		);
+
+		const alwaysOnTopSettingsId = settings.connect(
+			"changed::always-on-top",
+			() => {
+				this._handleAlwaysOnTop();
+			}
+		);
+
+		this._settingsWatchingListIds.push(alwaysOnTopSettingsId);
 	}
 
 	get terminalWindow() {
@@ -141,7 +150,7 @@ export const QuakeMode = class {
 			return;
 		}
 
-		if (this.terminalWindow.has_focus() || !this.terminalWindow.minimized) {
+		if (this.terminalWindow.has_focus()) {
 			return this._hideTerminalWithAnimationBottomUp();
 		}
 
@@ -177,7 +186,7 @@ export const QuakeMode = class {
 				}
 
 				this._setupHideFromOverviewAndAltTab();
-				this.terminalWindow.make_above();
+				this._handleAlwaysOnTop();
 
 				this._terminalWindowUnmanagedId = this.terminalWindow.connect(
 					"unmanaged",
@@ -230,7 +239,12 @@ export const QuakeMode = class {
 				return;
 			}
 
+			// This code should run exclusively during the initial creation of the terminal application
+			// to ensure an immediate disconnection, we turn off the signal.
 			sig.off();
+
+			// Since our terminal application has his own "drop-down" showing animation, we must get rid of any other effect
+			// that the windows have when they are created.
 			wm.emit("kill-window-effects", this.actor);
 
 			/**
@@ -405,5 +419,20 @@ export const QuakeMode = class {
 		}
 
 		this._hideTerminalWithAnimationBottomUp();
+	}
+
+	_handleAlwaysOnTop() {
+		const shouldAlwaysOnTop = this._settings.get_boolean("always-on-top");
+
+		if (!shouldAlwaysOnTop && !this.terminalWindow.is_above()) {
+			return;
+		}
+
+		if (!shouldAlwaysOnTop && this.terminalWindow.is_above()) {
+			this.terminalWindow.unmake_above();
+			return;
+		}
+
+		this.terminalWindow.make_above();
 	}
 };

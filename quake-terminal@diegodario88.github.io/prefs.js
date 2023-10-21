@@ -321,6 +321,22 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 			settings.set_int("horizontal-alignment", horizontalAlignmentRow.selected);
 		});
 
+		// Always on top
+		const alwaysOnTopRow = new Adw.SwitchRow({
+			title: _("Always On Top"),
+			subtitle: _(
+				"When enabled, terminal window will appear on top of all other non-topmost windows"
+			),
+		});
+		positionSettingsGroup.add(alwaysOnTopRow);
+
+		settings.bind(
+			"always-on-top",
+			alwaysOnTopRow,
+			"active",
+			Gio.SettingsBindFlags.DEFAULT
+		);
+
 		window.add(page);
 	}
 }
