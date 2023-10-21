@@ -40,6 +40,9 @@ const keyvalIsAllowed = (keyval) => {
 		Gdk.KEY_F10,
 		Gdk.KEY_F11,
 		Gdk.KEY_F12,
+		Gdk.KEY_F13,
+		Gdk.KEY_grave,
+		Gdk.KEY_dead_grave,
 	].includes(keyval);
 };
 
