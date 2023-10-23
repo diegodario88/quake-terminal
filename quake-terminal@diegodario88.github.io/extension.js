@@ -32,7 +32,7 @@ export default class TogglerExtension extends Extension {
 	enable() {
 		this._settings = this.getSettings();
 		this._appSystem = Shell.AppSystem.get_default();
-		this._quakeMode = null;
+		this._quakeModeInstances = new Map();
 
 		Main.wm.addKeybinding(
 			"terminal-shortcut",
@@ -48,19 +48,20 @@ export default class TogglerExtension extends Extension {
 	disable() {
 		Main.wm.removeKeybinding("terminal-shortcut");
 
-		if (this._quakeMode) {
-			this._quakeMode.destroy();
-		}
+		this._quakeModeInstances.forEach(instance => {
+			instance.destroy();
+		});
 
 		this._settings = null;
 		this._appSystem = null;
-		this._quakeMode = null;
+		this._quakeModeInstances.clear();
 	}
 
 	_handleQuakeModeTerminal() {
+		let currentWorkspace = global.workspace_manager.get_active_workspace_index();
 		if (
-			!this._quakeMode ||
-			this._quakeMode._internalState === TERMINAL_STATE.DEAD
+			!this._quakeModeInstances.has(currentWorkspace) ||
+			this._quakeModeInstances.get(currentWorkspace)._internalState === TERMINAL_STATE.DEAD
 		) {
 			const terminalId = this._settings.get_string("terminal-id");
 			const terminal = this._appSystem.lookup_app(terminalId);
@@ -70,10 +71,9 @@ export default class TogglerExtension extends Extension {
 				return;
 			}
 
-			this._quakeMode = new QuakeMode(terminal, this._settings);
-			return this._quakeMode.toggle();
+			this._quakeModeInstances.set(currentWorkspace, new QuakeMode(terminal, this._settings));
 		}
 
-		return this._quakeMode.toggle();
+		return this._quakeModeInstances.get(currentWorkspace).toggle();
 	}
 }

@@ -23,10 +23,6 @@ export const QuakeMode = class {
 		this._terminalWindowFocusId = null;
 		this.terminalWindow = undefined;
 
-		if (this._terminal.state === SHELL_APP_STATE.RUNNING) {
-			this._internalState = TERMINAL_STATE.RUNNING;
-		}
-
 		/**
 		 * An array that stores signal connections. Used to disconnect when destroy (disable) is called.
 		 * @type {Array<import("./util.js").SignalConnector>}
@@ -195,7 +191,7 @@ export const QuakeMode = class {
 				resolve(true);
 			};
 
-			const windowsChangedSignalConnector = once(
+			const windowsChangedSignalConnector = on(
 				this._terminal,
 				"windows-changed",
 				shellAppWindowsChangedHandler
@@ -234,7 +230,7 @@ export const QuakeMode = class {
 
 			// This code should run exclusively during the initial creation of the terminal application
 			// to ensure an immediate disconnection, we turn off the signal.
-			sig.off();
+			//sig.off();
 
 			// Since our terminal application has his own "drop-down" showing animation, we must get rid of any other effect
 			// that the windows have when they are created.
