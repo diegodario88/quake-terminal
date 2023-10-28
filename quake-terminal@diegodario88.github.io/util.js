@@ -1,4 +1,5 @@
 import GObject from "gi://GObject";
+import GLib from "gi://GLib";
 
 /**
  * Signal Connector
@@ -98,6 +99,34 @@ export function once(target, signalName, handler) {
 	const onceSignal = new SignalConnector(target, signalName, signalOnceHandler);
 
 	return onceSignal;
+}
+
+/**
+ * Sets a timeout and rejects with an error message upon expiration.
+ *
+ * @function setTimeoutAndRejectOnExpiration
+ * @param {number} seconds - The duration of the timeout in seconds.
+ * @param {function} rejectCallbackFunction - A callback function to reject with an error.
+ * @param {string} rejectErrorMessage - The error message for rejection.
+ * @returns {number} -  the ID (greater than 0) of the event source.
+ */
+export function setTimeoutAndRejectOnExpiration(
+	seconds,
+	rejectCallbackFunction,
+	rejectErrorMessage
+) {
+	const timeoutHandler = () => {
+		rejectCallbackFunction(new Error(rejectErrorMessage));
+		return GLib.SOURCE_REMOVE;
+	};
+
+	const sourceTimeoutLoopId = GLib.timeout_add_seconds(
+		GLib.PRIORITY_DEFAULT,
+		seconds,
+		timeoutHandler
+	);
+
+	return sourceTimeoutLoopId;
 }
 
 export const TERMINAL_STATE = {
