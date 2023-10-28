@@ -26,39 +26,11 @@ const getConnectedMonitorsList = () => {
 	return monitors;
 };
 
-const keyvalIsAllowed = (keyval) => {
-	return [
-		Gdk.KEY_F1,
-		Gdk.KEY_F2,
-		Gdk.KEY_F3,
-		Gdk.KEY_F4,
-		Gdk.KEY_F5,
-		Gdk.KEY_F6,
-		Gdk.KEY_F7,
-		Gdk.KEY_F8,
-		Gdk.KEY_F9,
-		Gdk.KEY_F10,
-		Gdk.KEY_F11,
-		Gdk.KEY_F12,
-		Gdk.KEY_F13,
-		Gdk.KEY_grave,
-		Gdk.KEY_dead_grave,
-	].includes(keyval);
-};
-
 const isValidAccel = (mask, keyval) => {
 	return (
 		Gtk.accelerator_valid(keyval, mask) ||
 		(keyval === Gdk.KEY_Tab && mask !== 0)
 	);
-};
-
-const isValidBinding = (mask, keycode, keyval) => {
-	if (keyvalIsAllowed(keyval)) {
-		return true;
-	}
-
-	return mask !== 0 && keycode !== 0 && mask & ~Gdk.ModifierType.SHIFT_MASK;
 };
 
 const GenericObjectModel = GObject.registerClass(
@@ -188,10 +160,7 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 					return Gdk.EVENT_STOP;
 				}
 
-				if (
-					!isValidBinding(mask, keycode, keyval) ||
-					!isValidAccel(mask, keyval)
-				) {
+				if (!isValidAccel(mask, keyval)) {
 					return Gdk.EVENT_STOP;
 				}
 
