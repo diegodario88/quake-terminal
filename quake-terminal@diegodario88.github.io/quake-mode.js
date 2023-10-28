@@ -1,9 +1,10 @@
 import Clutter from "gi://Clutter";
 import GLib from "gi://GLib";
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
-import { on, once, SHELL_APP_STATE, TERMINAL_STATE } from "./util.js";
+import * as Util from "./util.js";
 
 const ANIMATION_TIME_IN_MILLISECONDS = 250;
+const STARTUP_TIMER_IN_SECONDS = 1;
 
 /**
  * Quake Mode Module
@@ -17,13 +18,13 @@ export const QuakeMode = class {
 	constructor(terminal, settings) {
 		this._terminal = terminal;
 		this._settings = settings;
-		this._internalState = TERMINAL_STATE.READY;
+		this._internalState = Util.TERMINAL_STATE.READY;
 		this._sourceTimeoutLoopId = null;
 		this._terminalWindowUnmanagedId = null;
 		this._terminalWindowFocusId = null;
 
-		if (this._terminal.state === SHELL_APP_STATE.RUNNING) {
-			this._internalState = TERMINAL_STATE.RUNNING;
+		if (this._terminal.state === Util.SHELL_APP_STATE.RUNNING) {
+			this._internalState = Util.TERMINAL_STATE.RUNNING;
 		}
 
 		/**
@@ -118,7 +119,7 @@ export const QuakeMode = class {
 		this._connectedSignals = [];
 		this._settingsWatchingListIds = [];
 		this._terminal = null;
-		this._internalState = TERMINAL_STATE.DEAD;
+		this._internalState = Util.TERMINAL_STATE.DEAD;
 	}
 
 	/**
@@ -127,22 +128,22 @@ export const QuakeMode = class {
 	 */
 	async toggle() {
 		if (
-			this._internalState === TERMINAL_STATE.READY ||
-			this._terminal.state === SHELL_APP_STATE.STOPPED
+			this._internalState === Util.TERMINAL_STATE.READY ||
+			this._terminal.state === Util.SHELL_APP_STATE.STOPPED
 		) {
 			try {
 				await this._launchTerminalWindow();
 				this._adjustTerminalWindowPosition();
 			} catch (error) {
-				this.destroy();
 				console.error(error);
+				this.destroy();
 			} finally {
 				return;
 			}
 		}
 
 		if (
-			this._internalState !== TERMINAL_STATE.RUNNING ||
+			this._internalState !== Util.TERMINAL_STATE.RUNNING ||
 			!this.terminalWindow
 		) {
 			return;
@@ -164,61 +165,63 @@ export const QuakeMode = class {
 	 * @returns {Promise<boolean>} A promise that resolves when the terminal window is ready.
 	 */
 	_launchTerminalWindow() {
-		this._internalState = TERMINAL_STATE.STARTING;
+		this._internalState = Util.TERMINAL_STATE.STARTING;
 
 		if (!this._terminal) {
 			return Promise.reject(new Error("No Terminal APP"));
 		}
 
+		const promiseTerminalWindowInLessThanFiveSeconds = new Promise(
+			(resolve, reject) => {
+				const shellAppWindowsChangedHandler = () => {
+					GLib.Source.remove(this._sourceTimeoutLoopId);
+					this._sourceTimeoutLoopId = null;
 
-		return new Promise((resolve, reject) => {
-			const shellAppWindowsChangedHandler = () => {
-				GLib.Source.remove(this._sourceTimeoutLoopId);
-				this._sourceTimeoutLoopId = null;
-
-				if (this._terminal.get_n_windows() < 1) {
-					return reject(
-						`app '${this._terminal.id}' is launched but no windows`
-					);
-				}
-
-				this._setupHideFromOverviewAndAltTab();
-				this._handleAlwaysOnTop();
-
-				this._terminalWindowUnmanagedId = this.terminalWindow.connect(
-					"unmanaged",
-					() => this.destroy()
-				);
-
-				this._terminalWindowFocusId = global.display.connectObject(
-					"notify::focus-window",
-					() => {
-						this._handleHideOnFocusLoss();
+					if (this._terminal.get_n_windows() < 1) {
+						return reject(
+							`app '${this._terminal.id}' is launched but no windows`
+						);
 					}
+
+					// Keeps the Terminal out of Overview mode and Alt-Tab window switching
+					this._configureSkipTaskbarProperty();
+
+					this._handleAlwaysOnTop();
+
+					this._terminalWindowUnmanagedId = this.terminalWindow.connect(
+						"unmanaged",
+						() => this.destroy()
+					);
+
+					this._terminalWindowFocusId = global.display.connectObject(
+						"notify::focus-window",
+						() => {
+							this._handleHideOnFocusLoss();
+						}
+					);
+
+					resolve(true);
+				};
+
+				const windowsChangedSignalConnector = Util.once(
+					this._terminal,
+					"windows-changed",
+					shellAppWindowsChangedHandler
 				);
 
-				resolve(true);
-			};
+				this._connectedSignals.push(windowsChangedSignalConnector);
 
-			const windowsChangedSignalConnector = once(
-				this._terminal,
-				"windows-changed",
-				shellAppWindowsChangedHandler
-			);
+				Util.setTimeoutAndRejectOnExpiration(
+					STARTUP_TIMER_IN_SECONDS,
+					reject,
+					`Timeout reached when attempting to open quake terminal`
+				);
 
-			this._connectedSignals.push(windowsChangedSignalConnector);
+				this._terminal.open_new_window(-1);
+			}
+		);
 
-			this._sourceTimeoutLoopId = GLib.timeout_add_seconds(
-				GLib.PRIORITY_DEFAULT,
-				5,
-				() => {
-					reject(new Error(`launch '${this._terminal.id}' timeout`));
-					return GLib.SOURCE_REMOVE;
-				}
-			);
-
-			this._terminal.open_new_window(-1);
-		});
+		return promiseTerminalWindowInLessThanFiveSeconds;
 	}
 
 	/**
@@ -250,11 +253,11 @@ export const QuakeMode = class {
 			 * Listens once for the `size-changed(Meta.Window)` signal, which is emitted when the size of the toplevel
 			 * window has changed, or when the size of the client window has changed.
 			 */
-			const sizeChangedSignalConnector = once(
+			const sizeChangedSignalConnector = Util.once(
 				this.terminalWindow,
 				"size-changed",
 				() => {
-					this._internalState = TERMINAL_STATE.RUNNING;
+					this._internalState = Util.TERMINAL_STATE.RUNNING;
 					this.actor.remove_clip();
 					this._showTerminalWithAnimationTopDown();
 				}
@@ -264,7 +267,7 @@ export const QuakeMode = class {
 			this._fitTerminalToMainMonitor();
 		};
 
-		const mapSignalConnector = on(
+		const mapSignalConnector = Util.on(
 			global.window_manager,
 			"map",
 			mapSignalHandler
@@ -274,7 +277,7 @@ export const QuakeMode = class {
 	}
 
 	_shouldAvoidAnimation() {
-		if (this._internalState !== TERMINAL_STATE.RUNNING) {
+		if (this._internalState !== Util.TERMINAL_STATE.RUNNING) {
 			return true;
 		}
 
@@ -305,7 +308,7 @@ export const QuakeMode = class {
 		this.actor.ease({
 			mode: Clutter.AnimationMode.EASE_IN_QUAD,
 			translation_y: 0,
-			duration: ANIMATION_TIME_IN_MILLISECONDS
+			duration: ANIMATION_TIME_IN_MILLISECONDS,
 		});
 
 		this._fitTerminalToMainMonitor();
@@ -375,7 +378,7 @@ export const QuakeMode = class {
 		);
 	}
 
-	_setupHideFromOverviewAndAltTab() {
+	_configureSkipTaskbarProperty() {
 		const terminalWindow = this.terminalWindow;
 
 		Object.defineProperty(terminalWindow, "skip_taskbar", {
