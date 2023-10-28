@@ -76,7 +76,9 @@ const GenericObjectModel = GObject.registerClass(
 				"value",
 				"value",
 				GObject.ParamFlags.READWRITE,
-				null
+				0,
+				100,
+				0
 			),
 		},
 	},
