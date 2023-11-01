@@ -209,7 +209,7 @@ export const QuakeMode = class {
 
 				this._connectedSignals.push(windowsChangedSignalConnector);
 
-				Util.setTimeoutAndRejectOnExpiration(
+				this._sourceTimeoutLoopId = Util.setTimeoutAndRejectOnExpiration(
 					STARTUP_TIMER_IN_SECONDS,
 					reject,
 					`Timeout reached when attempting to open quake terminal`
@@ -365,7 +365,7 @@ export const QuakeMode = class {
 			area.x +
 			Math.round(
 				horizontalAlignmentSettingsValue &&
-				(area.width - terminalWidth) / horizontalAlignmentSettingsValue
+					(area.width - terminalWidth) / horizontalAlignmentSettingsValue
 			);
 
 		this.terminalWindow.move_to_monitor(mainMonitorScreen);
