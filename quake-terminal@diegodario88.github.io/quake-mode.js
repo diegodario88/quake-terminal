@@ -1,5 +1,6 @@
 import Clutter from "gi://Clutter";
 import GLib from "gi://GLib";
+import Shell from "gi://Shell";
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
 import * as Util from "./util.js";
 
@@ -21,6 +22,7 @@ export const QuakeMode = class {
 		this._sourceTimeoutLoopId = null;
 		this._terminalWindowUnmanagedId = null;
 		this._terminalWindowFocusId = null;
+		this._blurActor = null;
 
 		/** We will monkey-patch this method. Let's store the original one. */
 		this._original_shouldAnimateActor = Main.wm._shouldAnimateActor;
@@ -95,7 +97,22 @@ export const QuakeMode = class {
 			},
 		});
 
+		actor.set_name("quake-terminal");
+
 		return actor;
+	}
+
+	get monitorDisplayScreenIndex() {
+		let userSelectionDisplayIndex = this._settings.get_int("monitor-screen");
+
+		const primaryDisplayIndex = global.display.get_primary_monitor();
+		const availableDisplaysIndexes = global.display.get_n_monitors() - 1;
+
+		if (userSelectionDisplayIndex > availableDisplaysIndexes) {
+			return primaryDisplayIndex;
+		}
+
+		return userSelectionDisplayIndex;
 	}
 
 	destroy() {
@@ -137,6 +154,7 @@ export const QuakeMode = class {
 			this._internalState === Util.TERMINAL_STATE.READY ||
 			this._terminal.state === Util.SHELL_APP_STATE.STOPPED
 		) {
+			console.log("*** TOGGLE ***");
 			try {
 				await this._launchTerminalWindow();
 				this._adjustTerminalWindowPosition();
@@ -144,6 +162,8 @@ export const QuakeMode = class {
 				console.error(error);
 				this.destroy();
 			}
+
+			return;
 		}
 
 		if (
@@ -269,6 +289,7 @@ export const QuakeMode = class {
 
 			this._connectedSignals.push(sizeChangedSignalConnector);
 			this._fitTerminalToMainMonitor();
+			this._handleBlurEffect();
 		};
 
 		const mapSignalConnector = Util.on(
@@ -317,8 +338,6 @@ export const QuakeMode = class {
 				this._isTransitioning = false;
 			},
 		});
-
-		this._fitTerminalToMainMonitor();
 	}
 
 	_hideTerminalWithAnimationBottomUp() {
@@ -343,15 +362,60 @@ export const QuakeMode = class {
 			return;
 		}
 
-		let mainMonitorScreen = this._settings.get_int("monitor-screen");
-		const maxNumberOfMonitors = global.display.get_n_monitors() - 1;
+		this.terminalWindow.move_to_monitor(this.monitorDisplayScreenIndex);
 
-		if (mainMonitorScreen > maxNumberOfMonitors) {
-			mainMonitorScreen = maxNumberOfMonitors;
-		}
+		const allocation = this._computeAllocationPosition();
 
-		const area =
-			this.terminalWindow.get_work_area_for_monitor(mainMonitorScreen);
+		this.terminalWindow.move_resize_frame(
+			false,
+			allocation.x,
+			allocation.y,
+			allocation.width,
+			allocation.height
+		);
+
+		// if (!this._blurActor) {
+		// 	this._blurActor = new Clutter.Actor({
+		// 		x: allocation.x,
+		// 		y: 0,
+		// 		width: allocation.width,
+		// 		height: allocation.height,
+		// 	});
+
+		// 	this._blurActor.add_effect_with_name(
+		// 		"blur-effect",
+		// 		new Shell.BlurEffect({
+		// 			sigma: 30,
+		// 			brightness: 1,
+		// 			mode: Shell.BlurMode.BACKGROUND,
+		// 		})
+		// 	);
+
+		// 	this.actor.insert_child_at_index(this._blurActor, 0);
+		// 	this._blurActor.set_name("blur_actor");
+		// }
+
+		this.actor.get_children().forEach((child, index) => {
+			console.log(
+				`allocation: x ${child.x}, y ${child.y}, w: ${child.width}, h: ${child.height}`
+			);
+
+			console.log(
+				`*** Child ${index} Opacity:${child.opacity} Name: ${child.name} ***`
+			);
+		});
+	}
+
+	/**
+	 * Calculates the allocation position for a terminal window.
+	 *
+	 * @returns {{ x: number, y: number, width: number, height: number }} An object
+	 * containing the position and size properties.
+	 */
+	_computeAllocationPosition() {
+		const area = this.terminalWindow.get_work_area_for_monitor(
+			this.monitorDisplayScreenIndex
+		);
 
 		const verticalSettingsValue = this._settings.get_int("vertical-size");
 		const horizontalSettingsValue = this._settings.get_int("horizontal-size");
@@ -363,26 +427,30 @@ export const QuakeMode = class {
 		const terminalHeight = Math.round(
 			(verticalSettingsValue * area.height) / 100
 		);
+
 		const terminalWidth = Math.round(
 			(horizontalSettingsValue * area.width) / 100
 		);
 
-		const terminalX =
-			area.x +
-			Math.round(
-				horizontalAlignmentSettingsValue &&
-					(area.width - terminalWidth) / horizontalAlignmentSettingsValue
-			);
+		let terminalX = area.x;
 
-		this.terminalWindow.move_to_monitor(mainMonitorScreen);
+		if (horizontalAlignmentSettingsValue !== Util.HORIZONTAL_ALIGNMENT.LEFT) {
+			const remainingWidth = area.width - terminalWidth;
+			const xPositionOffset = remainingWidth / horizontalAlignmentSettingsValue;
 
-		this.terminalWindow.move_resize_frame(
-			false,
-			terminalX,
-			area.y,
-			terminalWidth,
-			terminalHeight
-		);
+			terminalX += Math.round(xPositionOffset);
+		}
+
+		const allocation = {
+			x: terminalX,
+			y: area.y,
+			width: terminalWidth,
+			height: terminalHeight,
+		};
+
+		console.warn(`[Quake-Terminal says ->] ${JSON.stringify(allocation)}`);
+
+		return allocation;
 	}
 
 	_configureSkipTaskbarProperty() {
@@ -472,5 +540,30 @@ export const QuakeMode = class {
 		}
 
 		this.terminalWindow.make_above();
+	}
+
+	_handleBlurEffect() {
+		const actorChildrenWithoutBlur = this.actor
+			.get_children()
+			.find((c) => c.name !== "quake-blur-actor");
+
+		actorChildrenWithoutBlur.opacity = 230;
+
+		const allocation = this._computeAllocationPosition();
+
+		const blurActor = new Clutter.Actor({
+			...allocation,
+			y: 0,
+			name: "quake-blur-actor",
+		});
+
+		const quakeBlurEffect = new Shell.BlurEffect({
+			sigma: 30,
+			brightness: 1,
+			mode: Shell.BlurMode.BACKGROUND,
+		});
+
+		blurActor.add_effect_with_name("quake-blur-effect", quakeBlurEffect);
+		this.actor.insert_child_at_index(blurActor, 0);
 	}
 };

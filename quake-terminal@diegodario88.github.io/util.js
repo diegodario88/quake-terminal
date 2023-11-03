@@ -141,3 +141,9 @@ export const SHELL_APP_STATE = {
 	STARTING: 1,
 	RUNNING: 2,
 };
+
+export const HORIZONTAL_ALIGNMENT = {
+	LEFT: 0,
+	RIGHT: 1,
+	CENTER: 2,
+};
