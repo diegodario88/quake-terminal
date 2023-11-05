@@ -204,7 +204,7 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 
 		for (const [idx, monitor] of monitorScreens.entries()) {
 			const monitorScreen = new GenericObjectModel(
-				`${monitor.model}`.toUpperCase(),
+				`${monitor.description}`.toUpperCase(),
 				idx
 			);
 			monitorScreenModel.append(monitorScreen);
