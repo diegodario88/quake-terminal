@@ -29,8 +29,8 @@
 		</key>
 		<key name="monitor-screen" type="i">
 			<default>0</default>
-			<summary>Monitor Screen</summary>
-  		<description>Specify the monitor screen where the terminal should be rendered</description>
+			<summary>Display</summary>
+  		<description>Specify the display where the terminal should be rendered</description>
 		</key>
 		<key name="auto-hide-window" type="b">
 			<default>true</default>
@@ -49,4 +49,3 @@
 		</key>
 	</schema>
 </schemalist>
-
