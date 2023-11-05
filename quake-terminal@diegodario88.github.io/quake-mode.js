@@ -337,15 +337,26 @@ export const QuakeMode = class {
 			return;
 		}
 
-		let mainMonitorScreen = this._settings.get_int("monitor-screen");
-		const maxNumberOfMonitors = global.display.get_n_monitors() - 1;
+		// global.display.get_current_monitor() !== Main.layoutManager.primaryIndex
+		console.log('global.display.get_current_monitor()', global.display.get_current_monitor());
+		console.log('Main.layoutManager.primaryIndex', Main.layoutManager.primaryIndex);
 
-		if (mainMonitorScreen > maxNumberOfMonitors) {
-			mainMonitorScreen = maxNumberOfMonitors;
+		const monitorIndex = this._settings.get_boolean("render-on-current-monitor")
+			? global.display.get_current_monitor()
+			: this._settings.get_boolean("render-on-primary-monitor")
+				? Main.layoutManager.primaryIndex
+				: this._settings.get_int("monitor-screen");
+		console.log("🚀 🚀 🚀 monitorIndex:", monitorIndex)
+
+		// if set monitor index is greater that the maximum index in the current configuration
+		// use the index of primary monitor
+		if (monitorIndex > (global.display.get_n_monitors() - 1)) {
+			monitorIndex = Main.layoutManager.primaryIndex;
 		}
+		console.log("🚀 🚀 🚀 monitorIndex:", monitorIndex)
 
 		const area =
-			this.terminalWindow.get_work_area_for_monitor(mainMonitorScreen);
+			this.terminalWindow.get_work_area_for_monitor(monitorIndex);
 
 		const verticalSettingsValue = this._settings.get_int("vertical-size");
 		const horizontalSettingsValue = this._settings.get_int("horizontal-size");
@@ -365,10 +376,10 @@ export const QuakeMode = class {
 			area.x +
 			Math.round(
 				horizontalAlignmentSettingsValue &&
-					(area.width - terminalWidth) / horizontalAlignmentSettingsValue
+				(area.width - terminalWidth) / horizontalAlignmentSettingsValue
 			);
 
-		this.terminalWindow.move_to_monitor(mainMonitorScreen);
+		this.terminalWindow.move_to_monitor(global.display.get_current_monitor());
 
 		this.terminalWindow.move_resize_frame(
 			false,

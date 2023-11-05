@@ -42,6 +42,41 @@ git clone https://github.com/diegodario88/quake-terminal.git
 ./scripts/install.sh
 ```
 
+## Contributing
+
+### Setup
+1. Fork this repo on github
+2. Clone your new repo
+3. Browse to the root of the project and run the provided installation script:
+```bash
+./scripts/install.sh
+```
+4. Login and log back in to use the extensions
+5. Making changes in .gschema.xml requires running:
+```bash
+glib-compile-schemas quake-terminal@diegodario88.github.io/schemas/
+```
+6. Repeat 3. and 4. after making code changes and 5. when necessary
+
+###  Debugging
+
+- Watch extensions logs
+```bash
+journalctl -f -o cat /usr/bin/gnome-shell
+```
+- Watch preferences window logs
+```bash
+journalctl -f -o cat /usr/bin/gjs
+```
+- watch GSettings updates:
+```bash
+dconf watch /org/gnome/shell/extensions/quake-terminal/
+```
+
+## GJS docs
+
+GNOME Shell Extensions dcoumentation and tutorial: https://gjs.guide/extensions/
+
 ## Like this Extension?
 
 If you want to help me with this, consider buying me a coffee. :)

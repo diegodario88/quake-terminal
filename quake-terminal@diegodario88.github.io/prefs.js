@@ -8,12 +8,16 @@ import {
 	gettext as _,
 } from "resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js";
 
+/**
+ *
+ * @returns GdkMonitor[]
+ */
 const getConnectedMonitorsList = () => {
 	const monitors = [];
 
-	const display = Gdk.Display.get_default();
+	const display = Gdk.Display.get_default(); // Gets the default GdkDisplay
 	if (display && "get_monitors" in display) {
-		const monitorsAvailable = display.get_monitors();
+		const monitorsAvailable = display.get_monitors();  // Gets the list of monitors associated with this display.
 
 		for (let idx = 0; idx < monitorsAvailable.get_n_items(); idx++) {
 			const monitor = monitorsAvailable.get_item(idx);
@@ -195,6 +199,38 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 			Gio.SettingsBindFlags.DEFAULT
 		);
 
+		// Render on current Monitor
+		const renderOnCurrentMonitor = new Adw.SwitchRow({
+			title: _("Show on the current Display"),
+			subtitle: _(
+				"When enabled, the Terminal will be shown on the Display that currently has the mouse pointer"
+			),
+		});
+		generalSettingsGroup.add(renderOnCurrentMonitor);
+
+		settings.bind(
+			"render-on-current-monitor",
+			renderOnCurrentMonitor,
+			"active",
+			Gio.SettingsBindFlags.DEFAULT
+		);
+
+		// Render on primary Monitor
+		const renderOnPrimaryMonitor = new Adw.SwitchRow({
+			title: _("Show on the primary Display"),
+			subtitle: _(
+				"When enabled, the Terminal will be shown on the Display set as Primary in Gnome Display settings"
+			),
+		});
+		generalSettingsGroup.add(renderOnPrimaryMonitor);
+
+		settings.bind(
+			"render-on-primary-monitor",
+			renderOnPrimaryMonitor,
+			"active",
+			Gio.SettingsBindFlags.DEFAULT
+		);
+
 		// Monitor Screen
 		const monitorScreenModel = new Gio.ListStore({
 			item_type: GenericObjectModel,
@@ -209,19 +245,39 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 			);
 			monitorScreenModel.append(monitorScreen);
 		}
-
 		const monitorRow = new Adw.ComboRow({
 			title: _("Display"),
 			subtitle: _("Which display should the terminal be rendered on"),
 			model: monitorScreenModel,
 			expression: new Gtk.PropertyExpression(GenericObjectModel, null, "name"),
 			selected: settings.get_int("monitor-screen"),
+			sensitive: !settings.get_boolean("render-on-current-monitor") && !settings.get_boolean("render-on-primary-monitor"),
 		});
 
 		generalSettingsGroup.add(monitorRow);
 
 		monitorRow.connect("notify::selected", () => {
 			settings.set_int("monitor-screen", monitorRow.selected);
+		});
+
+		// watch for render-on-current-monitor changes
+		settings.connect("changed::render-on-current-monitor", () => {
+			// set render-on-primary-monitor to false when render-on-current-monitor was set to true
+			if (settings.get_boolean("render-on-current-monitor") && settings.get_boolean("render-on-primary-monitor")) {
+				settings.set_boolean("render-on-primary-monitor", false);
+			}
+			// disable selecting a monitor screen
+			monitorRow.set_sensitive(!settings.get_boolean("render-on-current-monitor"));
+		});
+
+		// watch for render-on-primary-monitor changes
+		settings.connect("changed::render-on-primary-monitor", () => {
+			// set render-on-current-monitor to false when render-on-primary-monitor was set to true
+			if (settings.get_boolean("render-on-primary-monitor") && settings.get_boolean("render-on-current-monitor")) {
+				settings.set_boolean("render-on-current-monitor", false);
+			}
+			// disable selecting a monitor screen
+			monitorRow.set_sensitive(!settings.get_boolean("render-on-primary-monitor"));
 		});
 
 		// Animation Time
