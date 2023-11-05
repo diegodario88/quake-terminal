@@ -1,0 +1,15 @@
+{
+	"env": {
+		"es2021": true
+	},
+	"extends": [
+		"eslint:recommended"
+	],
+	"parserOptions": {
+		"sourceType": "module"
+	},
+	"globals": {
+		"global": "readonly",
+		"console": "readonly"
+	}
+}
