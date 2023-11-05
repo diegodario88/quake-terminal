@@ -7,13 +7,13 @@
 
 ## Overview
 
-The GNOME Shell Extension - Quake Terminal enhances your desktop experience by providing a Quake-style terminal that can be summoned over any workspace with ease. 
+The GNOME Shell Extension - Quake Terminal enhances your desktop experience by providing a Quake-style terminal that can be summoned over any workspace with ease.
 
 This extension offers the following features:
 
 - Quick Activation: You can summon the Quake Terminal using a single keyboard shortcut or a customizable key combination, ensuring fast and efficient access.
 - Workspace Integration: The Quake Terminal remains discreetly hidden in overview mode and during Alt+Tab switching, ensuring it doesn't obstruct your workspace when not in use.
-- Multi-Monitor Support: You have the flexibility to choose which monitor screen the Quake Terminal should appear on, making it even more versatile and convenient.
+- Multi-Display Support: You have the flexibility to choose which display screen the Quake Terminal should appear on, making it even more versatile and convenient.
 
 Future Plans
  - Adding a blur effect to the terminal actor, enhancing both aesthetics and overall appeal.

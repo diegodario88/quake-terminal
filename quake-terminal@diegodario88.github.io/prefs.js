@@ -211,8 +211,8 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 		}
 
 		const monitorRow = new Adw.ComboRow({
-			title: _("Monitor Screen"),
-			subtitle: _("Which monitor the terminal should be rendered"),
+			title: _("Display"),
+			subtitle: _("Which display should the terminal be rendered on"),
 			model: monitorScreenModel,
 			expression: new Gtk.PropertyExpression(GenericObjectModel, null, "name"),
 			selected: settings.get_int("monitor-screen"),
