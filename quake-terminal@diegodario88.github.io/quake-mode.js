@@ -4,6 +4,7 @@ import * as Main from "resource:///org/gnome/shell/ui/main.js";
 import * as Util from "./util.js";
 
 const STARTUP_TIMER_IN_SECONDS = 1;
+
 /**
  * Quake Mode Module
  *
@@ -20,6 +21,12 @@ export const QuakeMode = class {
 		this._sourceTimeoutLoopId = null;
 		this._terminalWindowUnmanagedId = null;
 		this._terminalWindowFocusId = null;
+
+		/** We will monkey-patch this method. Let's store the original one. */
+		this._original_shouldAnimateActor = Main.wm._shouldAnimateActor;
+
+		// Enhance the close animation behavior when exiting
+		this._configureActorCloseAnimation();
 
 		if (this._terminal.state === Util.SHELL_APP_STATE.RUNNING) {
 			this._internalState = Util.TERMINAL_STATE.RUNNING;
@@ -118,6 +125,7 @@ export const QuakeMode = class {
 		this._settingsWatchingListIds = [];
 		this._terminal = null;
 		this._internalState = Util.TERMINAL_STATE.DEAD;
+		Main.wm._shouldAnimateActor = this._original_shouldAnimateActor;
 	}
 
 	/**
@@ -135,8 +143,6 @@ export const QuakeMode = class {
 			} catch (error) {
 				console.error(error);
 				this.destroy();
-			} finally {
-				return;
 			}
 		}
 
@@ -402,6 +408,46 @@ export const QuakeMode = class {
 				return this.is_skip_taskbar();
 			},
 		});
+	}
+
+	_configureActorCloseAnimation() {
+		/** We will use `self` to refer to the extension inside the patched method. */
+		const self = this;
+
+		Main.wm._shouldAnimateActor = function (actor, types) {
+			const stack = new Error().stack;
+			const forClosing = stack.includes("_destroyWindow@");
+
+			/**
+			 * We specifically handle window closing events, but only when our actor is the target.
+			 * For all other cases, the original behavior remains in effect.
+			 */
+			if (!forClosing || actor !== self.actor) {
+				return self._original_shouldAnimateActor.apply(this, [actor, types]);
+			}
+
+			/** Store the original ease() method of the terminal actor. */
+			const originalActorEase = actor.ease;
+
+			/**
+			 * Intercept the next call to actor.ease() to perform a custom bottom-up close animation.
+			 * Afterward, immediately restore the original behavior.
+			 */
+			actor.ease = function () {
+				actor.ease = originalActorEase;
+
+				actor.ease({
+					mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+					translation_y: actor.height * -1,
+					duration: self._settings.get_int("animation-time"),
+					onComplete: () => {
+						Main.wm._destroyWindowDone(global.window_manager, actor);
+					},
+				});
+			};
+
+			return true;
+		};
 	}
 
 	_handleHideOnFocusLoss() {
