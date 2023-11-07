@@ -98,6 +98,28 @@ export const QuakeMode = class {
 		return actor;
 	}
 
+	get monitorDisplayScreenIndex() {
+		if (this._settings.get_boolean("render-on-current-monitor")) {
+			// current display
+			return global.display.get_current_monitor();
+		}
+
+		if (this._settings.get_boolean("render-on-primary-monitor")) {
+			// primary display
+			return global.display.get_primary_monitor();
+		}
+
+		const userSelectionDisplayIndex = this._settings.get_int("monitor-screen");
+		const availableDisplaysIndexes = global.display.get_n_monitors() - 1;
+		if (userSelectionDisplayIndex >= 0 && userSelectionDisplayIndex <= availableDisplaysIndexes) {
+			// user seletect display
+			return userSelectionDisplayIndex;
+		}
+
+		// fallback to primary display
+		return global.display.get_primary_monitor();
+	}
+
 	destroy() {
 		if (this._sourceTimeoutLoopId) {
 			GLib.Source.remove(this._sourceTimeoutLoopId);
@@ -342,21 +364,8 @@ export const QuakeMode = class {
 		if (!this.terminalWindow) {
 			return;
 		}
-
-		// get the monitor index on which the terminal will be rendered
-		const monitorIndex = this._settings.get_boolean("render-on-current-monitor")
-			? global.display.get_current_monitor()
-			: this._settings.get_boolean("render-on-primary-monitor")
-				? Main.layoutManager.primaryIndex
-				: this._settings.get_int("monitor-screen");
-
-		// if the monitor index is greater that the maximum index in the current configuration
-		// use the index of primary monitor
-		if (monitorIndex > (global.display.get_n_monitors() - 1)) {
-			monitorIndex = Main.layoutManager.primaryIndex;
-		}
-
-		const area = this.terminalWindow.get_work_area_for_monitor(monitorIndex);
+		const monitorDisplayScreenIndex = this.monitorDisplayScreenIndex
+		const area = this.terminalWindow.get_work_area_for_monitor(monitorDisplayScreenIndex);
 
 		const verticalSettingsValue = this._settings.get_int("vertical-size");
 		const horizontalSettingsValue = this._settings.get_int("horizontal-size");
@@ -379,7 +388,7 @@ export const QuakeMode = class {
 				(area.width - terminalWidth) / horizontalAlignmentSettingsValue
 			);
 
-		this.terminalWindow.move_to_monitor(monitorIndex);
+		this.terminalWindow.move_to_monitor(monitorDisplayScreenIndex);
 
 		this.terminalWindow.move_resize_frame(
 			false,
