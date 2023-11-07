@@ -100,23 +100,19 @@ export const QuakeMode = class {
 
 	get monitorDisplayScreenIndex() {
 		if (this._settings.get_boolean("render-on-current-monitor")) {
-			// current display
 			return global.display.get_current_monitor();
 		}
 
 		if (this._settings.get_boolean("render-on-primary-monitor")) {
-			// primary display
 			return global.display.get_primary_monitor();
 		}
 
 		const userSelectionDisplayIndex = this._settings.get_int("monitor-screen");
 		const availableDisplaysIndexes = global.display.get_n_monitors() - 1;
 		if (userSelectionDisplayIndex >= 0 && userSelectionDisplayIndex <= availableDisplaysIndexes) {
-			// user seletect display
 			return userSelectionDisplayIndex;
 		}
 
-		// fallback to primary display
 		return global.display.get_primary_monitor();
 	}
 
