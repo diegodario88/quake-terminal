@@ -27,10 +27,22 @@
 			<summary>Terminal Horizontal Alignment</summary>
 			<description>Control the value for horizontal alignment</description>
 		</key>
+		<key name="render-on-current-monitor" type="b">
+			<default>false</default>
+			<summary>Show on the current Display</summary>
+  		<description>When enabled, the Terminal will be shown on the Display that currently has the mouse pointer</description>
+		</key>
+
+		<key name="render-on-primary-monitor" type="b">
+			<default>false</default>
+			<summary>Show on the primary Display</summary>
+  		<description>When enabled, the Terminal will be shown on the Display set as Primary in Gnome Display settings</description>
+		</key>
+
 		<key name="monitor-screen" type="i">
 			<default>0</default>
-			<summary>Monitor Screen</summary>
-  		<description>Specify the monitor screen where the terminal should be rendered</description>
+			<summary>Display</summary>
+  		<description>Specify the display where the terminal should be rendered</description>
 		</key>
 		<key name="auto-hide-window" type="b">
 			<default>true</default>
@@ -49,4 +61,3 @@
 		</key>
 	</schema>
 </schemalist>
-

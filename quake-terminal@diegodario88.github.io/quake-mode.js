@@ -98,6 +98,24 @@ export const QuakeMode = class {
 		return actor;
 	}
 
+	get monitorDisplayScreenIndex() {
+		if (this._settings.get_boolean("render-on-current-monitor")) {
+			return global.display.get_current_monitor();
+		}
+
+		if (this._settings.get_boolean("render-on-primary-monitor")) {
+			return global.display.get_primary_monitor();
+		}
+
+		const userSelectionDisplayIndex = this._settings.get_int("monitor-screen");
+		const availableDisplaysIndexes = global.display.get_n_monitors() - 1;
+		if (userSelectionDisplayIndex >= 0 && userSelectionDisplayIndex <= availableDisplaysIndexes) {
+			return userSelectionDisplayIndex;
+		}
+
+		return global.display.get_primary_monitor();
+	}
+
 	destroy() {
 		if (this._sourceTimeoutLoopId) {
 			GLib.Source.remove(this._sourceTimeoutLoopId);
@@ -342,16 +360,8 @@ export const QuakeMode = class {
 		if (!this.terminalWindow) {
 			return;
 		}
-
-		let mainMonitorScreen = this._settings.get_int("monitor-screen");
-		const maxNumberOfMonitors = global.display.get_n_monitors() - 1;
-
-		if (mainMonitorScreen > maxNumberOfMonitors) {
-			mainMonitorScreen = maxNumberOfMonitors;
-		}
-
-		const area =
-			this.terminalWindow.get_work_area_for_monitor(mainMonitorScreen);
+		const monitorDisplayScreenIndex = this.monitorDisplayScreenIndex
+		const area = this.terminalWindow.get_work_area_for_monitor(monitorDisplayScreenIndex);
 
 		const verticalSettingsValue = this._settings.get_int("vertical-size");
 		const horizontalSettingsValue = this._settings.get_int("horizontal-size");
@@ -371,10 +381,10 @@ export const QuakeMode = class {
 			area.x +
 			Math.round(
 				horizontalAlignmentSettingsValue &&
-					(area.width - terminalWidth) / horizontalAlignmentSettingsValue
+				(area.width - terminalWidth) / horizontalAlignmentSettingsValue
 			);
 
-		this.terminalWindow.move_to_monitor(mainMonitorScreen);
+		this.terminalWindow.move_to_monitor(monitorDisplayScreenIndex);
 
 		this.terminalWindow.move_resize_frame(
 			false,
