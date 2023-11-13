@@ -82,7 +82,7 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 		// App ID
 		const rowId = new Adw.ActionRow({
 			title: _("Terminal App ID"),
-			subtitle: "/usr/share/applications/",
+			subtitle: "/usr/share/applications/ or \n /var/lib/flatpak/exports/share/applications/",
 		});
 		generalSettingsGroup.add(rowId);
 
