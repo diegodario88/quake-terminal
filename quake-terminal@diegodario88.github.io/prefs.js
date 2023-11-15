@@ -17,7 +17,7 @@ const getConnectedMonitorsList = () => {
 
 	const display = Gdk.Display.get_default(); // Gets the default GdkDisplay
 	if (display && "get_monitors" in display) {
-		const monitorsAvailable = display.get_monitors();  // Gets the list of monitors associated with this display.
+		const monitorsAvailable = display.get_monitors(); // Gets the list of monitors associated with this display.
 
 		for (let idx = 0; idx < monitorsAvailable.get_n_items(); idx++) {
 			const monitor = monitorsAvailable.get_item(idx);
@@ -82,7 +82,7 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 		// App ID
 		const rowId = new Adw.ActionRow({
 			title: _("Terminal App ID"),
-			subtitle: "/usr/share/applications/",
+			subtitle: _("Client application identifier"),
 		});
 		generalSettingsGroup.add(rowId);
 
@@ -93,6 +93,50 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 			hexpand: true,
 		});
 
+		const helpButton = Gtk.Button.new_from_icon_name("help-about-symbolic", {
+			valign: Gtk.Align.CENTER,
+		});
+		helpButton.add_css_class("flat");
+
+		helpButton.connect("clicked", () => {
+			const helpDialogLabel = new Gtk.Label({
+				margin_top: 12,
+				margin_start: 24,
+				margin_end: 24,
+				margin_bottom: 24,
+				wrap: true,
+				label: _(
+					"Some useful information about how to setup. \n\n Aspects of how to find include: \n\n • something directory \n • something path \n • something other stuff"
+				),
+			});
+
+			const helpDialogScrolledWindow = new Gtk.ScrolledWindow({
+				propagate_natural_height: true,
+				vscrollbar_policy: Gtk.PolicyType.NEVER,
+			});
+			helpDialogScrolledWindow.set_child(helpDialogLabel);
+
+			const helpButtonToolbarView = new Adw.ToolbarView({
+				content: helpDialogScrolledWindow,
+			});
+
+			helpButtonToolbarView.add_top_bar(new Adw.HeaderBar());
+
+			const helpDialog = new Adw.Window({
+				title: "About Terminal App ID",
+				modal: true,
+				transient_for: page.get_root(),
+				hide_on_close: true,
+				width_request: 360,
+				height_request: 200,
+				default_width: 420,
+				resizable: false,
+				content: helpButtonToolbarView,
+			});
+
+			helpDialog.present();
+		});
+
 		settings.bind(
 			"terminal-id",
 			entryId,
@@ -101,6 +145,7 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 		);
 
 		rowId.add_suffix(entryId);
+		rowId.add_suffix(helpButton);
 		rowId.activatable_widget = entryId;
 
 		// Shortcut
@@ -251,7 +296,9 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 			model: monitorScreenModel,
 			expression: new Gtk.PropertyExpression(GenericObjectModel, null, "name"),
 			selected: settings.get_int("monitor-screen"),
-			sensitive: !settings.get_boolean("render-on-current-monitor") && !settings.get_boolean("render-on-primary-monitor"),
+			sensitive:
+				!settings.get_boolean("render-on-current-monitor") &&
+				!settings.get_boolean("render-on-primary-monitor"),
 		});
 
 		generalSettingsGroup.add(monitorRow);
@@ -263,21 +310,31 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 		// watch for render-on-current-monitor changes
 		settings.connect("changed::render-on-current-monitor", () => {
 			// set render-on-primary-monitor to false when render-on-current-monitor was set to true
-			if (settings.get_boolean("render-on-current-monitor") && settings.get_boolean("render-on-primary-monitor")) {
+			if (
+				settings.get_boolean("render-on-current-monitor") &&
+				settings.get_boolean("render-on-primary-monitor")
+			) {
 				settings.set_boolean("render-on-primary-monitor", false);
 			}
 			// disable selecting a monitor screen
-			monitorRow.set_sensitive(!settings.get_boolean("render-on-current-monitor"));
+			monitorRow.set_sensitive(
+				!settings.get_boolean("render-on-current-monitor")
+			);
 		});
 
 		// watch for render-on-primary-monitor changes
 		settings.connect("changed::render-on-primary-monitor", () => {
 			// set render-on-current-monitor to false when render-on-primary-monitor was set to true
-			if (settings.get_boolean("render-on-primary-monitor") && settings.get_boolean("render-on-current-monitor")) {
+			if (
+				settings.get_boolean("render-on-primary-monitor") &&
+				settings.get_boolean("render-on-current-monitor")
+			) {
 				settings.set_boolean("render-on-current-monitor", false);
 			}
 			// disable selecting a monitor screen
-			monitorRow.set_sensitive(!settings.get_boolean("render-on-primary-monitor"));
+			monitorRow.set_sensitive(
+				!settings.get_boolean("render-on-primary-monitor")
+			);
 		});
 
 		// Animation Time
