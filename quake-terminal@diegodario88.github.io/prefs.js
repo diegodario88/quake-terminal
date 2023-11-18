@@ -238,7 +238,7 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 						return false;
 					}
 
-					return app.get_categories().toLowerCase().includes("terminal");
+					return app.get_categories()?.toLowerCase().includes("terminal");
 				})
 				.sort((a, b) => a.get_id().localeCompare(b.get_id()));
 
