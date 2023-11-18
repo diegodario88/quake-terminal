@@ -222,7 +222,7 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 
 		// Shortcut
 		const shortcutId = "terminal-shortcut";
-		const rowShortcut = new Adw.ActionRow({
+		const shortcutRow = new Adw.ActionRow({
 			title: _("Toggle Shortcut"),
 			subtitle: _("Shortcut to activate the terminal application"),
 		});
@@ -238,7 +238,7 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 			shortcutLabel.set_accelerator(settings.get_strv(shortcutId)[0]);
 		});
 
-		rowShortcut.connect("activated", () => {
+		shortcutRow.connect("activated", () => {
 			const ctl = new Gtk.EventControllerKey();
 
 			const statusPage = new Adw.StatusPage({
@@ -269,6 +269,7 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 			});
 
 			editor.add_controller(ctl);
+
 			ctl.connect("key-pressed", (_, keyval, keycode, state) => {
 				let mask = state & Gtk.accelerator_get_default_mod_mask();
 				mask &= ~Gdk.ModifierType.LOCK_MASK;
@@ -296,9 +297,9 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 			editor.present();
 		});
 
-		rowShortcut.add_suffix(shortcutLabel);
-		rowShortcut.activatable_widget = shortcutLabel;
-		generalSettingsGroup.add(rowShortcut);
+		shortcutRow.add_suffix(shortcutLabel);
+		shortcutRow.activatable_widget = shortcutLabel;
+		generalSettingsGroup.add(shortcutRow);
 
 		// Auto Hide Window
 		const autoHideWindowRow = new Adw.SwitchRow({
