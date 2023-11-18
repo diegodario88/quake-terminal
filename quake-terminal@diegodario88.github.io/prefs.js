@@ -8,6 +8,18 @@ import {
 	gettext as _,
 } from "resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js";
 
+const ABOUT_TERMINAL_APPLICATION_HELP_DIALOG = `
+<markup>
+  <span font_desc='11'>When this row is activated, the system searches for installed apps based on specific criteria that each app must meet:</span>
+
+  <span font_desc='10'> - A valid <a href="https://developer.gnome.org/documentation/tutorials/application-id.html">Application ID</a>.</span>
+  <span font_desc='10'> - Should not be hidden.</span>
+  <span font_desc='10'> - Must have <i>terminal</i> specified in its categories metadata.</span>
+
+  <small>This process ensures accurate and relevant results. For help and more information, refer to <a href="https://github.com/diegodario88/quake-terminal">Quake Terminal</a>.</small>
+</markup>
+`;
+
 /**
  *
  * @returns GdkMonitor[]
@@ -17,7 +29,7 @@ const getConnectedMonitorsList = () => {
 
 	const display = Gdk.Display.get_default(); // Gets the default GdkDisplay
 	if (display && "get_monitors" in display) {
-		const monitorsAvailable = display.get_monitors();  // Gets the list of monitors associated with this display.
+		const monitorsAvailable = display.get_monitors(); // Gets the list of monitors associated with this display.
 
 		for (let idx = 0; idx < monitorsAvailable.get_n_items(); idx++) {
 			const monitor = monitorsAvailable.get_item(idx);
@@ -36,6 +48,15 @@ const isValidAccel = (mask, keyval) => {
 		(keyval === Gdk.KEY_Tab && mask !== 0)
 	);
 };
+
+function getAppIconImage(app) {
+	const appIconString = app.get_icon()?.to_string() ?? "icon-missing";
+
+	return new Gtk.Image({
+		gicon: Gio.icon_new_for_string(appIconString),
+		iconSize: Gtk.IconSize.LARGE,
+	});
+}
 
 const GenericObjectModel = GObject.registerClass(
 	{
@@ -65,6 +86,57 @@ const GenericObjectModel = GObject.registerClass(
 	}
 );
 
+/** Dialog window used for selecting application from given list of apps
+ *  Emits `app-selected` signal with application id
+ */
+const AppChooserDialog = GObject.registerClass(
+	{
+		Properties: {},
+		Signals: { "app-selected": { param_types: [GObject.TYPE_STRING] } },
+	},
+	class AppChooserDialog extends Adw.PreferencesWindow {
+		/**
+		 * @param apps list of apps to display in dialog
+		 * @param parent parent window, dialog will be transient for parent
+		 */
+		_init(apps, parent) {
+			super._init({
+				modal: true,
+				transientFor: parent,
+				destroyWithParent: false,
+				title: "Select terminal application",
+			});
+
+			this.set_default_size(
+				0.7 * parent.defaultWidth,
+				0.7 * parent.defaultHeight
+			);
+			this._group = new Adw.PreferencesGroup();
+			const page = new Adw.PreferencesPage();
+			page.add(this._group);
+			this.add(page);
+			apps.forEach((app) => this._addAppRow(app));
+		}
+
+		/** for given app add row to selectable list */
+		_addAppRow(app) {
+			const row = new Adw.ActionRow({
+				title: app.get_display_name(),
+				subtitle: app.get_description(),
+				activatable: true,
+			});
+
+			row.add_prefix(getAppIconImage(app));
+			this._group.add(row);
+
+			row.connect("activated", () => {
+				this.emit("app-selected", app.get_id());
+				this.close();
+			});
+		}
+	}
+);
+
 export default class QuakeTerminalPreferences extends ExtensionPreferences {
 	fillPreferencesWindow(window) {
 		const settings = this.getSettings();
@@ -73,39 +145,130 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 		page.set_title(_("Quake Terminal Settings"));
 		page.set_name("quake-terminal-preferences");
 
+		const applicationSettingsGroup = new Adw.PreferencesGroup();
+		applicationSettingsGroup.set_title(_("Application"));
+		applicationSettingsGroup.set_name("application-settings-group");
+
+		page.add(applicationSettingsGroup);
+
+		// Application Terminal ID
+		const terminalApplicationId = settings.get_string("terminal-id");
+
+		let selectedTerminalEmulator = Gio.DesktopAppInfo.new(
+			terminalApplicationId
+		);
+
+		if (!selectedTerminalEmulator) {
+			console.warn(
+				`Unable to locate a terminal application with the specified ID (${terminalApplicationId}). Falling back to the default terminal.`
+			);
+
+			selectedTerminalEmulator = Gio.DesktopAppInfo.new(
+				settings.get_default_value("terminal-id").deep_unpack()
+			);
+		}
+
+		const applicationIDRow = new Adw.ActionRow({
+			title: _("Terminal Application"),
+		});
+
+		const gtkIcon = getAppIconImage(selectedTerminalEmulator);
+		applicationSettingsGroup.add(applicationIDRow);
+		applicationIDRow.set_subtitle(selectedTerminalEmulator.get_id());
+
+		const helpButton = Gtk.Button.new_from_icon_name("help-about-symbolic");
+		helpButton.set_valign(Gtk.Align.CENTER);
+		helpButton.add_css_class("flat");
+
+		helpButton.connect("clicked", () => {
+			const helpDialogLabel = new Gtk.Label({
+				margin_start: 24,
+				margin_end: 24,
+				margin_bottom: 24,
+				wrap: true,
+				useMarkup: true,
+				justify: Gtk.Justification.FILL,
+				label: ABOUT_TERMINAL_APPLICATION_HELP_DIALOG,
+			});
+
+			const helpDialogScrolledWindow = new Gtk.ScrolledWindow({
+				propagate_natural_height: true,
+				vscrollbar_policy: Gtk.PolicyType.NEVER,
+			});
+
+			helpDialogScrolledWindow.set_child(helpDialogLabel);
+
+			const helpButtonToolbarView = new Adw.ToolbarView({
+				content: helpDialogScrolledWindow,
+			});
+
+			helpButtonToolbarView.add_top_bar(new Adw.HeaderBar());
+
+			const helpDialog = new Adw.Window({
+				title: "About terminal application",
+				modal: true,
+				transient_for: page.get_root(),
+				hide_on_close: true,
+				width_request: 360,
+				height_request: 300,
+				default_width: 420,
+				resizable: false,
+				content: helpButtonToolbarView,
+			});
+
+			helpDialog.present();
+		});
+
+		applicationIDRow.add_prefix(gtkIcon);
+		applicationIDRow.add_suffix(helpButton);
+		applicationIDRow.activatable_widget = gtkIcon;
+
+		applicationIDRow.connect("activated", () => {
+			const allApps = Gio.app_info_get_all();
+
+			const selectableApps = allApps
+				.filter((app) => {
+					const appId = app.get_id();
+
+					if (!appId) {
+						return false;
+					}
+
+					if (!app.should_show()) {
+						return false;
+					}
+
+					return app.get_categories().toLowerCase().includes("terminal");
+				})
+				.sort((a, b) => a.get_id().localeCompare(b.get_id()));
+
+			const appChooserDialog = new AppChooserDialog(selectableApps, window);
+
+			appChooserDialog.connect("app-selected", (_source, appId) => {
+				settings.set_string("terminal-id", appId);
+
+				const newSelectedTerminalEmulator = Gio.DesktopAppInfo.new(appId);
+				applicationIDRow.set_subtitle(newSelectedTerminalEmulator.get_id());
+
+				const appIconString =
+					newSelectedTerminalEmulator.get_icon()?.to_string() ?? "icon-missing";
+
+				gtkIcon.clear();
+				gtkIcon.set_from_gicon(Gio.icon_new_for_string(appIconString));
+			});
+
+			appChooserDialog.present();
+		});
+
 		const generalSettingsGroup = new Adw.PreferencesGroup();
 		generalSettingsGroup.set_title(_("General"));
 		generalSettingsGroup.set_name("general-settings-group");
 
 		page.add(generalSettingsGroup);
 
-		// App ID
-		const rowId = new Adw.ActionRow({
-			title: _("Terminal App ID"),
-			subtitle: "/usr/share/applications/",
-		});
-		generalSettingsGroup.add(rowId);
-
-		const entryId = new Gtk.Entry({
-			placeholder_text: "org.gnome.Terminal.desktop",
-			text: settings.get_string("terminal-id"),
-			valign: Gtk.Align.CENTER,
-			hexpand: true,
-		});
-
-		settings.bind(
-			"terminal-id",
-			entryId,
-			"text",
-			Gio.SettingsBindFlags.DEFAULT
-		);
-
-		rowId.add_suffix(entryId);
-		rowId.activatable_widget = entryId;
-
 		// Shortcut
 		const shortcutId = "terminal-shortcut";
-		const rowShortcut = new Adw.ActionRow({
+		const shortcutRow = new Adw.ActionRow({
 			title: _("Toggle Shortcut"),
 			subtitle: _("Shortcut to activate the terminal application"),
 		});
@@ -121,7 +284,7 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 			shortcutLabel.set_accelerator(settings.get_strv(shortcutId)[0]);
 		});
 
-		rowShortcut.connect("activated", () => {
+		shortcutRow.connect("activated", () => {
 			const ctl = new Gtk.EventControllerKey();
 
 			const statusPage = new Adw.StatusPage({
@@ -152,6 +315,7 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 			});
 
 			editor.add_controller(ctl);
+
 			ctl.connect("key-pressed", (_, keyval, keycode, state) => {
 				let mask = state & Gtk.accelerator_get_default_mod_mask();
 				mask &= ~Gdk.ModifierType.LOCK_MASK;
@@ -179,9 +343,9 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 			editor.present();
 		});
 
-		rowShortcut.add_suffix(shortcutLabel);
-		rowShortcut.activatable_widget = shortcutLabel;
-		generalSettingsGroup.add(rowShortcut);
+		shortcutRow.add_suffix(shortcutLabel);
+		shortcutRow.activatable_widget = shortcutLabel;
+		generalSettingsGroup.add(shortcutRow);
 
 		// Auto Hide Window
 		const autoHideWindowRow = new Adw.SwitchRow({
@@ -251,7 +415,9 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 			model: monitorScreenModel,
 			expression: new Gtk.PropertyExpression(GenericObjectModel, null, "name"),
 			selected: settings.get_int("monitor-screen"),
-			sensitive: !settings.get_boolean("render-on-current-monitor") && !settings.get_boolean("render-on-primary-monitor"),
+			sensitive:
+				!settings.get_boolean("render-on-current-monitor") &&
+				!settings.get_boolean("render-on-primary-monitor"),
 		});
 
 		generalSettingsGroup.add(monitorRow);
@@ -263,21 +429,31 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 		// watch for render-on-current-monitor changes
 		settings.connect("changed::render-on-current-monitor", () => {
 			// set render-on-primary-monitor to false when render-on-current-monitor was set to true
-			if (settings.get_boolean("render-on-current-monitor") && settings.get_boolean("render-on-primary-monitor")) {
+			if (
+				settings.get_boolean("render-on-current-monitor") &&
+				settings.get_boolean("render-on-primary-monitor")
+			) {
 				settings.set_boolean("render-on-primary-monitor", false);
 			}
 			// disable selecting a monitor screen
-			monitorRow.set_sensitive(!settings.get_boolean("render-on-current-monitor"));
+			monitorRow.set_sensitive(
+				!settings.get_boolean("render-on-current-monitor")
+			);
 		});
 
 		// watch for render-on-primary-monitor changes
 		settings.connect("changed::render-on-primary-monitor", () => {
 			// set render-on-current-monitor to false when render-on-primary-monitor was set to true
-			if (settings.get_boolean("render-on-primary-monitor") && settings.get_boolean("render-on-current-monitor")) {
+			if (
+				settings.get_boolean("render-on-primary-monitor") &&
+				settings.get_boolean("render-on-current-monitor")
+			) {
 				settings.set_boolean("render-on-current-monitor", false);
 			}
 			// disable selecting a monitor screen
-			monitorRow.set_sensitive(!settings.get_boolean("render-on-primary-monitor"));
+			monitorRow.set_sensitive(
+				!settings.get_boolean("render-on-primary-monitor")
+			);
 		});
 
 		// Animation Time
