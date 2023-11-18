@@ -8,6 +8,18 @@ import {
 	gettext as _,
 } from "resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js";
 
+const ABOUT_TERMINAL_APPLICATION_HELP_DIALOG = `
+<markup>
+  <span font_desc='11'>When this row is activated, the system searches for installed apps based on specific criteria that each app must meet:</span>
+
+  <span font_desc='10'> - A valid <a href="https://developer.gnome.org/documentation/tutorials/application-id.html">Application ID</a>.</span>
+  <span font_desc='10'> - Should not be hidden.</span>
+  <span font_desc='10'> - Must have <i>terminal</i> specified in its categories metadata.</span>
+
+  <small>This process ensures accurate and relevant results. For help and more information, refer to <a href="https://github.com/diegodario88/quake-terminal">Quake Terminal</a>.</small>
+</markup>
+`;
+
 /**
  *
  * @returns GdkMonitor[]
