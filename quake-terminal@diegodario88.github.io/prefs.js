@@ -145,25 +145,24 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 		page.set_title(_("Quake Terminal Settings"));
 		page.set_name("quake-terminal-preferences");
 
-		const generalSettingsGroup = new Adw.PreferencesGroup();
-		generalSettingsGroup.set_title(_("General"));
-		generalSettingsGroup.set_name("general-settings-group");
+		const applicationSettingsGroup = new Adw.PreferencesGroup();
+		applicationSettingsGroup.set_title(_("Application"));
+		applicationSettingsGroup.set_name("application-settings-group");
 
-		page.add(generalSettingsGroup);
+		page.add(applicationSettingsGroup);
 
-		// App ID
-		const rowId = new Adw.ActionRow({
-			title: _("Terminal App ID"),
-			subtitle: _("Client application identifier"),
+		// Application Terminal ID
+		const selectedTerminalEmulator = Gio.DesktopAppInfo.new(
+			settings.get_string("terminal-id")
+		);
+
+		const applicationIDRow = new Adw.ActionRow({
+			title: _("Terminal Application"),
 		});
-		generalSettingsGroup.add(rowId);
 
-		const entryId = new Gtk.Entry({
-			placeholder_text: "org.gnome.Terminal.desktop",
-			text: settings.get_string("terminal-id"),
-			valign: Gtk.Align.CENTER,
-			hexpand: true,
-		});
+		const gtkIcon = getAppIconImage(selectedTerminalEmulator);
+		applicationSettingsGroup.add(applicationIDRow);
+		applicationIDRow.set_subtitle(selectedTerminalEmulator.get_id());
 
 		const helpButton = Gtk.Button.new_from_icon_name("help-about-symbolic", {
 			valign: Gtk.Align.CENTER,
@@ -172,20 +171,20 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 
 		helpButton.connect("clicked", () => {
 			const helpDialogLabel = new Gtk.Label({
-				margin_top: 12,
 				margin_start: 24,
 				margin_end: 24,
 				margin_bottom: 24,
 				wrap: true,
-				label: _(
-					"Some useful information about how to setup. \n\n Aspects of how to find include: \n\n • something directory \n • something path \n • something other stuff"
-				),
+				useMarkup: true,
+				justify: Gtk.Justification.FILL,
+				label: ABOUT_TERMINAL_APPLICATION_HELP_DIALOG,
 			});
 
 			const helpDialogScrolledWindow = new Gtk.ScrolledWindow({
 				propagate_natural_height: true,
 				vscrollbar_policy: Gtk.PolicyType.NEVER,
 			});
+
 			helpDialogScrolledWindow.set_child(helpDialogLabel);
 
 			const helpButtonToolbarView = new Adw.ToolbarView({
@@ -195,12 +194,12 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 			helpButtonToolbarView.add_top_bar(new Adw.HeaderBar());
 
 			const helpDialog = new Adw.Window({
-				title: "About Terminal App ID",
+				title: "About terminal application",
 				modal: true,
 				transient_for: page.get_root(),
 				hide_on_close: true,
 				width_request: 360,
-				height_request: 200,
+				height_request: 300,
 				default_width: 420,
 				resizable: false,
 				content: helpButtonToolbarView,
@@ -209,16 +208,52 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 			helpDialog.present();
 		});
 
-		settings.bind(
-			"terminal-id",
-			entryId,
-			"text",
-			Gio.SettingsBindFlags.DEFAULT
-		);
+		applicationIDRow.add_prefix(gtkIcon);
+		applicationIDRow.add_suffix(helpButton);
+		applicationIDRow.activatable_widget = gtkIcon;
 
-		rowId.add_suffix(entryId);
-		rowId.add_suffix(helpButton);
-		rowId.activatable_widget = entryId;
+		applicationIDRow.connect("activated", () => {
+			const allApps = Gio.app_info_get_all();
+
+			const selectableApps = allApps
+				.filter((app) => {
+					const appId = app.get_id();
+
+					if (!appId) {
+						return false;
+					}
+
+					if (!app.should_show()) {
+						return false;
+					}
+
+					return app.get_categories().toLowerCase().includes("terminal");
+				})
+				.sort((a, b) => a.get_id().localeCompare(b.get_id()));
+
+			const appChooserDialog = new AppChooserDialog(selectableApps, window);
+
+			appChooserDialog.connect("app-selected", (_source, appId) => {
+				settings.set_string("terminal-id", appId);
+
+				const newSelectedTerminalEmulator = Gio.DesktopAppInfo.new(appId);
+				applicationIDRow.set_subtitle(newSelectedTerminalEmulator.get_id());
+
+				const appIconString =
+					newSelectedTerminalEmulator.get_icon()?.to_string() ?? "icon-missing";
+
+				gtkIcon.clear();
+				gtkIcon.set_from_gicon(Gio.icon_new_for_string(appIconString));
+			});
+
+			appChooserDialog.present();
+		});
+
+		const generalSettingsGroup = new Adw.PreferencesGroup();
+		generalSettingsGroup.set_title(_("General"));
+		generalSettingsGroup.set_name("general-settings-group");
+
+		page.add(generalSettingsGroup);
 
 		// Shortcut
 		const shortcutId = "terminal-shortcut";
