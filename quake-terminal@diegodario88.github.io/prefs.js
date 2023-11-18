@@ -164,9 +164,8 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 		applicationSettingsGroup.add(applicationIDRow);
 		applicationIDRow.set_subtitle(selectedTerminalEmulator.get_id());
 
-		const helpButton = Gtk.Button.new_from_icon_name("help-about-symbolic", {
-			valign: Gtk.Align.CENTER,
-		});
+		const helpButton = Gtk.Button.new_from_icon_name("help-about-symbolic");
+		helpButton.set_valign(Gtk.Align.CENTER);
 		helpButton.add_css_class("flat");
 
 		helpButton.connect("clicked", () => {
