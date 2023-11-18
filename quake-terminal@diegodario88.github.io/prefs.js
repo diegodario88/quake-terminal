@@ -152,9 +152,21 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 		page.add(applicationSettingsGroup);
 
 		// Application Terminal ID
-		const selectedTerminalEmulator = Gio.DesktopAppInfo.new(
-			settings.get_string("terminal-id")
+		const terminalApplicationId = settings.get_string("terminal-id");
+
+		let selectedTerminalEmulator = Gio.DesktopAppInfo.new(
+			terminalApplicationId
 		);
+
+		if (!selectedTerminalEmulator) {
+			console.warn(
+				`Unable to locate a terminal application with the specified ID (${terminalApplicationId}). Falling back to the default terminal.`
+			);
+
+			selectedTerminalEmulator = Gio.DesktopAppInfo.new(
+				settings.get_default_value("terminal-id").deep_unpack()
+			);
+		}
 
 		const applicationIDRow = new Adw.ActionRow({
 			title: _("Terminal Application"),
