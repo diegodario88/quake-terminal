@@ -74,6 +74,57 @@ const GenericObjectModel = GObject.registerClass(
 	}
 );
 
+/** Dialog window used for selecting application from given list of apps
+ *  Emits `app-selected` signal with application id
+ */
+const AppChooserDialog = GObject.registerClass(
+	{
+		Properties: {},
+		Signals: { "app-selected": { param_types: [GObject.TYPE_STRING] } },
+	},
+	class AppChooserDialog extends Adw.PreferencesWindow {
+		/**
+		 * @param apps list of apps to display in dialog
+		 * @param parent parent window, dialog will be transient for parent
+		 */
+		_init(apps, parent) {
+			super._init({
+				modal: true,
+				transientFor: parent,
+				destroyWithParent: false,
+				title: "Select terminal application",
+			});
+
+			this.set_default_size(
+				0.7 * parent.defaultWidth,
+				0.7 * parent.defaultHeight
+			);
+			this._group = new Adw.PreferencesGroup();
+			const page = new Adw.PreferencesPage();
+			page.add(this._group);
+			this.add(page);
+			apps.forEach((app) => this._addAppRow(app));
+		}
+
+		/** for given app add row to selectable list */
+		_addAppRow(app) {
+			const row = new Adw.ActionRow({
+				title: app.get_display_name(),
+				subtitle: app.get_description(),
+				activatable: true,
+			});
+
+			row.add_prefix(getAppIconImage(app));
+			this._group.add(row);
+
+			row.connect("activated", () => {
+				this.emit("app-selected", app.get_id());
+				this.close();
+			});
+		}
+	}
+);
+
 export default class QuakeTerminalPreferences extends ExtensionPreferences {
 	fillPreferencesWindow(window) {
 		const settings = this.getSettings();
