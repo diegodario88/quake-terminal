@@ -37,6 +37,15 @@ const isValidAccel = (mask, keyval) => {
 	);
 };
 
+function getAppIconImage(app) {
+	const appIconString = app.get_icon()?.to_string() ?? "icon-missing";
+
+	return new Gtk.Image({
+		gicon: Gio.icon_new_for_string(appIconString),
+		iconSize: Gtk.IconSize.LARGE,
+	});
+}
+
 const GenericObjectModel = GObject.registerClass(
 	{
 		Properties: {
