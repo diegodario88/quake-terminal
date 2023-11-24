@@ -50,7 +50,7 @@ const isValidAccel = (mask, keyval) => {
 };
 
 function getAppIconImage(app) {
-	const appIconString = app.get_icon()?.to_string() ?? "icon-missing";
+	const appIconString = app?.get_icon()?.to_string() ?? "icon-missing";
 
 	return new Gtk.Image({
 		gicon: Gio.icon_new_for_string(appIconString),
@@ -163,9 +163,14 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 				`Unable to locate a terminal application with the specified ID (${terminalApplicationId}). Falling back to the default terminal.`
 			);
 
+			const defaultTerminalApplicationId = settings.get_default_value("terminal-id").deep_unpack();
 			selectedTerminalEmulator = Gio.DesktopAppInfo.new(
-				settings.get_default_value("terminal-id").deep_unpack()
+				defaultTerminalApplicationId
 			);
+
+			if (!selectedTerminalEmulator) {
+				console.warn(`Unable to locate default terminal application (${defaultTerminalApplicationId}).`);
+			}
 		}
 
 		const applicationIDRow = new Adw.ActionRow({
@@ -174,7 +179,7 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 
 		const gtkIcon = getAppIconImage(selectedTerminalEmulator);
 		applicationSettingsGroup.add(applicationIDRow);
-		applicationIDRow.set_subtitle(selectedTerminalEmulator.get_id());
+		applicationIDRow.set_subtitle(selectedTerminalEmulator?.get_id() ?? 'Gnome Terminal not found. Click here to select another terminal app.');
 
 		const helpButton = Gtk.Button.new_from_icon_name("help-about-symbolic");
 		helpButton.set_valign(Gtk.Align.CENTER);
