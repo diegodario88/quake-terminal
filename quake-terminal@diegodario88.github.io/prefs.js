@@ -154,32 +154,42 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 		// Application Terminal ID
 		const terminalApplicationId = settings.get_string("terminal-id");
 
+		const defaultTerminalApplicationId = settings
+			.get_default_value("terminal-id")
+			.deep_unpack();
+
+		const applicationIDRow = new Adw.ActionRow({
+			title: _("Terminal Application"),
+		});
+
 		let selectedTerminalEmulator = Gio.DesktopAppInfo.new(
 			terminalApplicationId
 		);
 
 		if (!selectedTerminalEmulator) {
 			console.warn(
-				`Unable to locate a terminal application with the specified ID (${terminalApplicationId}). Falling back to the default terminal.`
+				`Unable to locate a terminal application with the specified ID (${terminalApplicationId}). Falling back to the default terminal (${defaultTerminalApplicationId}).`
 			);
 
-			const defaultTerminalApplicationId = settings.get_default_value("terminal-id").deep_unpack();
 			selectedTerminalEmulator = Gio.DesktopAppInfo.new(
 				defaultTerminalApplicationId
 			);
-
-			if (!selectedTerminalEmulator) {
-				console.warn(`Unable to locate default terminal application (${defaultTerminalApplicationId}).`);
-			}
 		}
 
-		const applicationIDRow = new Adw.ActionRow({
-			title: _("Terminal Application"),
-		});
+		if (!selectedTerminalEmulator) {
+			console.warn(
+				`Unable to locate default terminal application (${defaultTerminalApplicationId}).`
+			);
+
+			applicationIDRow.set_subtitle(
+				`${defaultTerminalApplicationId} not found. Click here to select another terminal app.`
+			);
+		} else {
+			applicationIDRow.set_subtitle(selectedTerminalEmulator.get_id());
+		}
 
 		const gtkIcon = getAppIconImage(selectedTerminalEmulator);
 		applicationSettingsGroup.add(applicationIDRow);
-		applicationIDRow.set_subtitle(selectedTerminalEmulator?.get_id() ?? 'Gnome Terminal not found. Click here to select another terminal app.');
 
 		const helpButton = Gtk.Button.new_from_icon_name("help-about-symbolic");
 		helpButton.set_valign(Gtk.Align.CENTER);
