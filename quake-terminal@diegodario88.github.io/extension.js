@@ -63,6 +63,12 @@ export default class TogglerExtension extends Extension {
 			this._quakeMode._internalState === TERMINAL_STATE.DEAD
 		) {
 			const terminalId = this._settings.get_string("terminal-id");
+
+			if (!terminalId) {
+				Main.notify(_(`Select an application in Quake Terminal preferences.`));
+				return;
+			}
+
 			const terminal = this._appSystem.lookup_app(terminalId);
 
 			if (!terminal) {
