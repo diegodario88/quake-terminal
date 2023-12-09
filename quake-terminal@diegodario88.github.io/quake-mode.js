@@ -21,6 +21,7 @@ export const QuakeMode = class {
 		this._sourceTimeoutLoopId = null;
 		this._terminalWindowUnmanagedId = null;
 		this._terminalWindowFocusId = null;
+		this._terminalWindow = null;
 
 		/** We will monkey-patch this method. Let's store the original one. */
 		this._original_shouldAnimateActor = Main.wm._shouldAnimateActor;
@@ -67,7 +68,11 @@ export const QuakeMode = class {
 			return null;
 		}
 
-		return this._terminal.get_windows()[0];
+		if (!this._terminalWindow) {
+			this._terminalWindow = this._terminal.get_windows()[0];
+		}
+
+		return this._terminalWindow;
 	}
 
 	get actor() {
@@ -109,7 +114,11 @@ export const QuakeMode = class {
 
 		const userSelectionDisplayIndex = this._settings.get_int("monitor-screen");
 		const availableDisplaysIndexes = global.display.get_n_monitors() - 1;
-		if (userSelectionDisplayIndex >= 0 && userSelectionDisplayIndex <= availableDisplaysIndexes) {
+
+		if (
+			userSelectionDisplayIndex >= 0 &&
+			userSelectionDisplayIndex <= availableDisplaysIndexes
+		) {
 			return userSelectionDisplayIndex;
 		}
 
@@ -142,6 +151,7 @@ export const QuakeMode = class {
 		this._connectedSignals = [];
 		this._settingsWatchingListIds = [];
 		this._terminal = null;
+		this._terminalWindow = null;
 		this._internalState = Util.TERMINAL_STATE.DEAD;
 		Main.wm._shouldAnimateActor = this._original_shouldAnimateActor;
 	}
@@ -204,6 +214,8 @@ export const QuakeMode = class {
 							`app '${this._terminal.id}' is launched but no windows`
 						);
 					}
+
+					this._terminalWindow = this._terminal.get_windows()[0];
 
 					// Keeps the Terminal out of Overview mode and Alt-Tab window switching
 					this._configureSkipTaskbarProperty();
@@ -360,8 +372,10 @@ export const QuakeMode = class {
 		if (!this.terminalWindow) {
 			return;
 		}
-		const monitorDisplayScreenIndex = this.monitorDisplayScreenIndex
-		const area = this.terminalWindow.get_work_area_for_monitor(monitorDisplayScreenIndex);
+		const monitorDisplayScreenIndex = this.monitorDisplayScreenIndex;
+		const area = this.terminalWindow.get_work_area_for_monitor(
+			monitorDisplayScreenIndex
+		);
 
 		const verticalSettingsValue = this._settings.get_int("vertical-size");
 		const horizontalSettingsValue = this._settings.get_int("horizontal-size");
@@ -381,7 +395,7 @@ export const QuakeMode = class {
 			area.x +
 			Math.round(
 				horizontalAlignmentSettingsValue &&
-				(area.width - terminalWidth) / horizontalAlignmentSettingsValue
+					(area.width - terminalWidth) / horizontalAlignmentSettingsValue
 			);
 
 		this.terminalWindow.move_to_monitor(monitorDisplayScreenIndex);
