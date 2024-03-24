@@ -46,21 +46,30 @@ export const QuakeMode = class {
 					`changed::${prefAdjustment}`,
 					() => {
 						this._fitTerminalToMainMonitor();
-					}
+					},
 				);
 
 				this._settingsWatchingListIds.push(settingsId);
-			}
+			},
 		);
 
 		const alwaysOnTopSettingsId = settings.connect(
 			"changed::always-on-top",
 			() => {
 				this._handleAlwaysOnTop();
-			}
+			},
 		);
 
 		this._settingsWatchingListIds.push(alwaysOnTopSettingsId);
+
+		const skipTaskbarSettingsId = settings.connect(
+			"changed::skip-taskbar",
+			() => {
+				this._configureSkipTaskbarProperty();
+			},
+		);
+
+		this._settingsWatchingListIds.push(skipTaskbarSettingsId);
 	}
 
 	get terminalWindow() {
@@ -211,7 +220,7 @@ export const QuakeMode = class {
 
 					if (this._terminal.get_n_windows() < 1) {
 						return reject(
-							`app '${this._terminal.id}' is launched but no windows`
+							`app '${this._terminal.id}' is launched but no windows`,
 						);
 					}
 
@@ -224,14 +233,14 @@ export const QuakeMode = class {
 
 					this._terminalWindowUnmanagedId = this.terminalWindow.connect(
 						"unmanaged",
-						() => this.destroy()
+						() => this.destroy(),
 					);
 
 					this._terminalWindowFocusId = global.display.connectObject(
 						"notify::focus-window",
 						() => {
 							this._handleHideOnFocusLoss();
-						}
+						},
 					);
 
 					resolve(true);
@@ -240,7 +249,7 @@ export const QuakeMode = class {
 				const windowsChangedSignalConnector = Util.once(
 					this._terminal,
 					"windows-changed",
-					shellAppWindowsChangedHandler
+					shellAppWindowsChangedHandler,
 				);
 
 				this._connectedSignals.push(windowsChangedSignalConnector);
@@ -248,11 +257,11 @@ export const QuakeMode = class {
 				this._sourceTimeoutLoopId = Util.setTimeoutAndRejectOnExpiration(
 					STARTUP_TIMER_IN_SECONDS,
 					reject,
-					`Timeout reached when attempting to open quake terminal`
+					`Timeout reached when attempting to open quake terminal`,
 				);
 
 				this._terminal.open_new_window(-1);
-			}
+			},
 		);
 
 		return promiseTerminalWindowInLessThanFiveSeconds;
@@ -294,7 +303,7 @@ export const QuakeMode = class {
 					this._internalState = Util.TERMINAL_STATE.RUNNING;
 					this.actor.remove_clip();
 					this._showTerminalWithAnimationTopDown();
-				}
+				},
 			);
 
 			this._connectedSignals.push(sizeChangedSignalConnector);
@@ -304,7 +313,7 @@ export const QuakeMode = class {
 		const mapSignalConnector = Util.on(
 			global.window_manager,
 			"map",
-			mapSignalHandler
+			mapSignalHandler,
 		);
 
 		this._connectedSignals.push(mapSignalConnector);
@@ -374,28 +383,28 @@ export const QuakeMode = class {
 		}
 		const monitorDisplayScreenIndex = this.monitorDisplayScreenIndex;
 		const area = this.terminalWindow.get_work_area_for_monitor(
-			monitorDisplayScreenIndex
+			monitorDisplayScreenIndex,
 		);
 
 		const verticalSettingsValue = this._settings.get_int("vertical-size");
 		const horizontalSettingsValue = this._settings.get_int("horizontal-size");
 
 		const horizontalAlignmentSettingsValue = this._settings.get_int(
-			"horizontal-alignment"
+			"horizontal-alignment",
 		);
 
 		const terminalHeight = Math.round(
-			(verticalSettingsValue * area.height) / 100
+			(verticalSettingsValue * area.height) / 100,
 		);
 		const terminalWidth = Math.round(
-			(horizontalSettingsValue * area.width) / 100
+			(horizontalSettingsValue * area.width) / 100,
 		);
 
 		const terminalX =
 			area.x +
 			Math.round(
 				horizontalAlignmentSettingsValue &&
-					(area.width - terminalWidth) / horizontalAlignmentSettingsValue
+					(area.width - terminalWidth) / horizontalAlignmentSettingsValue,
 			);
 
 		this.terminalWindow.move_to_monitor(monitorDisplayScreenIndex);
@@ -405,21 +414,23 @@ export const QuakeMode = class {
 			terminalX,
 			area.y,
 			terminalWidth,
-			terminalHeight
+			terminalHeight,
 		);
 	}
 
 	_configureSkipTaskbarProperty() {
 		const terminalWindow = this.terminalWindow;
+		const shouldSkipTaskbar = this._settings.get_boolean("skip-taskbar");
 
 		Object.defineProperty(terminalWindow, "skip_taskbar", {
 			get() {
-				if (terminalWindow) {
+				if (terminalWindow && shouldSkipTaskbar) {
 					return true;
 				}
 
 				return this.is_skip_taskbar();
 			},
+			configurable: true,
 		});
 	}
 

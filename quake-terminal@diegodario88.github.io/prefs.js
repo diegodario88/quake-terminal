@@ -66,7 +66,7 @@ const GenericObjectModel = GObject.registerClass(
 				"name",
 				"name",
 				GObject.ParamFlags.READWRITE,
-				null
+				null,
 			),
 			value: GObject.ParamSpec.int(
 				"value",
@@ -75,7 +75,7 @@ const GenericObjectModel = GObject.registerClass(
 				GObject.ParamFlags.READWRITE,
 				0,
 				100,
-				0
+				0,
 			),
 		},
 	},
@@ -83,7 +83,7 @@ const GenericObjectModel = GObject.registerClass(
 		_init(name, value) {
 			super._init({ name, value });
 		}
-	}
+	},
 );
 
 /** Dialog window used for selecting application from given list of apps
@@ -109,7 +109,7 @@ const AppChooserDialog = GObject.registerClass(
 
 			this.set_default_size(
 				0.7 * parent.defaultWidth,
-				0.7 * parent.defaultHeight
+				0.7 * parent.defaultHeight,
 			);
 			this._group = new Adw.PreferencesGroup();
 			const page = new Adw.PreferencesPage();
@@ -134,7 +134,7 @@ const AppChooserDialog = GObject.registerClass(
 				this.close();
 			});
 		}
-	}
+	},
 );
 
 export default class QuakeTerminalPreferences extends ExtensionPreferences {
@@ -163,26 +163,26 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 		});
 
 		let selectedTerminalEmulator = Gio.DesktopAppInfo.new(
-			terminalApplicationId
+			terminalApplicationId,
 		);
 
 		if (!selectedTerminalEmulator) {
 			console.warn(
-				`Unable to locate a terminal application with the specified ID (${terminalApplicationId}). Falling back to the default terminal (${defaultTerminalApplicationId}).`
+				`Unable to locate a terminal application with the specified ID (${terminalApplicationId}). Falling back to the default terminal (${defaultTerminalApplicationId}).`,
 			);
 
 			selectedTerminalEmulator = Gio.DesktopAppInfo.new(
-				defaultTerminalApplicationId
+				defaultTerminalApplicationId,
 			);
 		}
 
 		if (!selectedTerminalEmulator) {
 			console.warn(
-				`Unable to locate default terminal application (${defaultTerminalApplicationId}).`
+				`Unable to locate default terminal application (${defaultTerminalApplicationId}).`,
 			);
 
 			applicationIDRow.set_subtitle(
-				`${defaultTerminalApplicationId} not found. Click here to select another terminal app.`
+				`${defaultTerminalApplicationId} not found. Click here to select another terminal app.`,
 			);
 		} else {
 			applicationIDRow.set_subtitle(selectedTerminalEmulator.get_id());
@@ -371,7 +371,7 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 		const autoHideWindowRow = new Adw.SwitchRow({
 			title: _("Auto Hide Terminal"),
 			subtitle: _(
-				"When enabled, this hides the Terminal window when it loses focus"
+				"When enabled, this hides the Terminal window when it loses focus",
 			),
 		});
 		generalSettingsGroup.add(autoHideWindowRow);
@@ -380,14 +380,14 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 			"auto-hide-window",
 			autoHideWindowRow,
 			"active",
-			Gio.SettingsBindFlags.DEFAULT
+			Gio.SettingsBindFlags.DEFAULT,
 		);
 
 		// Render on current Monitor
 		const renderOnCurrentMonitor = new Adw.SwitchRow({
 			title: _("Show on the current Display"),
 			subtitle: _(
-				"When enabled, the Terminal will be shown on the Display that currently has the mouse pointer"
+				"When enabled, the Terminal will be shown on the Display that currently has the mouse pointer",
 			),
 		});
 		generalSettingsGroup.add(renderOnCurrentMonitor);
@@ -396,14 +396,14 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 			"render-on-current-monitor",
 			renderOnCurrentMonitor,
 			"active",
-			Gio.SettingsBindFlags.DEFAULT
+			Gio.SettingsBindFlags.DEFAULT,
 		);
 
 		// Render on primary Monitor
 		const renderOnPrimaryMonitor = new Adw.SwitchRow({
 			title: _("Show on the primary Display"),
 			subtitle: _(
-				"When enabled, the Terminal will be shown on the Display set as Primary in Gnome Display settings"
+				"When enabled, the Terminal will be shown on the Display set as Primary in Gnome Display settings",
 			),
 		});
 		generalSettingsGroup.add(renderOnPrimaryMonitor);
@@ -412,7 +412,7 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 			"render-on-primary-monitor",
 			renderOnPrimaryMonitor,
 			"active",
-			Gio.SettingsBindFlags.DEFAULT
+			Gio.SettingsBindFlags.DEFAULT,
 		);
 
 		// Monitor Screen
@@ -425,7 +425,7 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 		for (const [idx, monitor] of monitorScreens.entries()) {
 			const monitorScreen = new GenericObjectModel(
 				`${monitor.description}`.toUpperCase(),
-				idx
+				idx,
 			);
 			monitorScreenModel.append(monitorScreen);
 		}
@@ -457,7 +457,7 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 			}
 			// disable selecting a monitor screen
 			monitorRow.set_sensitive(
-				!settings.get_boolean("render-on-current-monitor")
+				!settings.get_boolean("render-on-current-monitor"),
 			);
 		});
 
@@ -472,7 +472,7 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 			}
 			// disable selecting a monitor screen
 			monitorRow.set_sensitive(
-				!settings.get_boolean("render-on-primary-monitor")
+				!settings.get_boolean("render-on-primary-monitor"),
 			);
 		});
 
@@ -570,7 +570,7 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 		const alwaysOnTopRow = new Adw.SwitchRow({
 			title: _("Always On Top"),
 			subtitle: _(
-				"When enabled, terminal window will appear on top of all other non-topmost windows"
+				"When enabled, terminal window will appear on top of all other non-topmost windows",
 			),
 		});
 		positionSettingsGroup.add(alwaysOnTopRow);
@@ -579,7 +579,23 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 			"always-on-top",
 			alwaysOnTopRow,
 			"active",
-			Gio.SettingsBindFlags.DEFAULT
+			Gio.SettingsBindFlags.DEFAULT,
+		);
+
+		// Skip taskbar
+		const skipTaskbarRow = new Adw.SwitchRow({
+			title: _("Hide In Certain Modes"),
+			subtitle: _(
+				"When enabled, the terminal window will not appear in overview mode or when using Alt+Tab.",
+			),
+		});
+		positionSettingsGroup.add(skipTaskbarRow);
+
+		settings.bind(
+			"skip-taskbar",
+			skipTaskbarRow,
+			"active",
+			Gio.SettingsBindFlags.DEFAULT,
 		);
 
 		window.add(page);

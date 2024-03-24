@@ -1,6 +1,6 @@
 /*
  * Quake Terminal for GNOME Shell 45+
- * Copyright 2023 Diego Dario
+ * Copyright 2024 Diego Dario
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,7 +41,7 @@ export default class TogglerExtension extends Extension {
 			Shell.ActionMode.NORMAL |
 				Shell.ActionMode.OVERVIEW |
 				Shell.ActionMode.POPUP,
-			() => this._handleQuakeModeTerminal()
+			() => this._handleQuakeModeTerminal(),
 		);
 	}
 

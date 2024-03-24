@@ -6,7 +6,7 @@
 	"shell-version": ["45", "46"],
 	"settings-schema": "org.gnome.shell.extensions.quake-terminal",
 	"url": "https://github.com/diegodario88/quake-terminal",
-	"version-name": "1.6.1",
+	"version-name": "1.6.2",
 	"donations": {
 		"github": "diegodario88",
 		"kofi": "diegodario"
