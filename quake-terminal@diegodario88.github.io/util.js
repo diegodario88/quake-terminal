@@ -26,37 +26,37 @@ import GLib from "gi://GLib";
  * @module SignalConnector
  */
 export class SignalConnector {
-	constructor(target, name, handler) {
-		this.name = name;
-		this.target = target;
-		this.id = target.connect(name, (...args) => handler(this, ...args));
-	}
+  constructor(target, name, handler) {
+    this.name = name;
+    this.target = target;
+    this.id = target.connect(name, (...args) => handler(this, ...args));
+  }
 
-	/**
-	 * Disconnects a handler from an instance so it will not be called during
-	 * any future or currently ongoing emissions of the signal it has been
-	 * connected to.
-	 *
-	 * The `handler_id` becomes invalid and may be reused.
-	 *
-	 * @method off
-	 * @returns {void}
-	 */
-	off() {
-		const matchedId = GObject.signal_handler_find(
-			this.target,
-			GObject.SignalMatchType.ID,
-			this.id,
-			null,
-			null,
-			null,
-			null
-		);
+  /**
+   * Disconnects a handler from an instance so it will not be called during
+   * any future or currently ongoing emissions of the signal it has been
+   * connected to.
+   *
+   * The `handler_id` becomes invalid and may be reused.
+   *
+   * @method off
+   * @returns {void}
+   */
+  off() {
+    const matchedId = GObject.signal_handler_find(
+      this.target,
+      GObject.SignalMatchType.ID,
+      this.id,
+      null,
+      null,
+      null,
+      null
+    );
 
-		if (matchedId) {
-			this.target.disconnect(this.id);
-		}
-	}
+    if (matchedId) {
+      this.target.disconnect(this.id);
+    }
+  }
 }
 
 /**
@@ -69,8 +69,8 @@ export class SignalConnector {
  * @returns {SignalConnector} - A SignalConnector instance representing the connection.
  */
 export function on(target, signalName, handler) {
-	const onSignal = new SignalConnector(target, signalName, handler);
-	return onSignal;
+  const onSignal = new SignalConnector(target, signalName, handler);
+  return onSignal;
 }
 
 /**
@@ -83,22 +83,22 @@ export function on(target, signalName, handler) {
  * @returns {SignalConnector} - A SignalConnector instance representing the connection.
  */
 export function once(target, signalName, handler) {
-	let disconnected = false;
+  let disconnected = false;
 
-	const signalOnceHandler = (signal, ...args) => {
-		// Ensure we run the callback only once
-		if (disconnected) {
-			return;
-		}
+  const signalOnceHandler = (signal, ...args) => {
+    // Ensure we run the callback only once
+    if (disconnected) {
+      return;
+    }
 
-		disconnected = true;
-		signal.off(); // Disconnect the signal
-		handler(...args);
-	};
+    disconnected = true;
+    signal.off(); // Disconnect the signal
+    handler(...args);
+  };
 
-	const onceSignal = new SignalConnector(target, signalName, signalOnceHandler);
+  const onceSignal = new SignalConnector(target, signalName, signalOnceHandler);
 
-	return onceSignal;
+  return onceSignal;
 }
 
 /**
@@ -111,33 +111,33 @@ export function once(target, signalName, handler) {
  * @returns {number} -  the ID (greater than 0) of the event source.
  */
 export function setTimeoutAndRejectOnExpiration(
-	seconds,
-	rejectCallbackFunction,
-	rejectErrorMessage
+  seconds,
+  rejectCallbackFunction,
+  rejectErrorMessage
 ) {
-	const timeoutHandler = () => {
-		rejectCallbackFunction(new Error(rejectErrorMessage));
-		return GLib.SOURCE_REMOVE;
-	};
+  const timeoutHandler = () => {
+    rejectCallbackFunction(new Error(rejectErrorMessage));
+    return GLib.SOURCE_REMOVE;
+  };
 
-	const sourceTimeoutLoopId = GLib.timeout_add_seconds(
-		GLib.PRIORITY_DEFAULT,
-		seconds,
-		timeoutHandler
-	);
+  const sourceTimeoutLoopId = GLib.timeout_add_seconds(
+    GLib.PRIORITY_DEFAULT,
+    seconds,
+    timeoutHandler
+  );
 
-	return sourceTimeoutLoopId;
+  return sourceTimeoutLoopId;
 }
 
 export const TERMINAL_STATE = {
-	READY: Symbol("READY"),
-	STARTING: Symbol("STARTING"),
-	RUNNING: Symbol("RUNNING"),
-	DEAD: Symbol("DEAD"),
+  READY: Symbol("READY"),
+  STARTING: Symbol("STARTING"),
+  RUNNING: Symbol("RUNNING"),
+  DEAD: Symbol("DEAD"),
 };
 
 export const SHELL_APP_STATE = {
-	STOPPED: 0,
-	STARTING: 1,
-	RUNNING: 2,
+  STOPPED: 0,
+  STARTING: 1,
+  RUNNING: 2,
 };

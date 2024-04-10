@@ -21,65 +21,65 @@
 import Meta from "gi://Meta";
 import Shell from "gi://Shell";
 import {
-	Extension,
-	gettext as _,
+  Extension,
+  gettext as _,
 } from "resource:///org/gnome/shell/extensions/extension.js";
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
 import { TERMINAL_STATE } from "./util.js";
 import { QuakeMode } from "./quake-mode.js";
 
 export default class TogglerExtension extends Extension {
-	enable() {
-		this._settings = this.getSettings();
-		this._appSystem = Shell.AppSystem.get_default();
-		this._quakeMode = null;
+  enable() {
+    this._settings = this.getSettings();
+    this._appSystem = Shell.AppSystem.get_default();
+    this._quakeMode = null;
 
-		Main.wm.addKeybinding(
-			"terminal-shortcut",
-			this._settings,
-			Meta.KeyBindingFlags.IGNORE_AUTOREPEAT,
-			Shell.ActionMode.NORMAL |
-				Shell.ActionMode.OVERVIEW |
-				Shell.ActionMode.POPUP,
-			() => this._handleQuakeModeTerminal(),
-		);
-	}
+    Main.wm.addKeybinding(
+      "terminal-shortcut",
+      this._settings,
+      Meta.KeyBindingFlags.IGNORE_AUTOREPEAT,
+      Shell.ActionMode.NORMAL |
+        Shell.ActionMode.OVERVIEW |
+        Shell.ActionMode.POPUP,
+      () => this._handleQuakeModeTerminal()
+    );
+  }
 
-	disable() {
-		Main.wm.removeKeybinding("terminal-shortcut");
+  disable() {
+    Main.wm.removeKeybinding("terminal-shortcut");
 
-		if (this._quakeMode) {
-			this._quakeMode.destroy();
-		}
+    if (this._quakeMode) {
+      this._quakeMode.destroy();
+    }
 
-		this._settings = null;
-		this._appSystem = null;
-		this._quakeMode = null;
-	}
+    this._settings = null;
+    this._appSystem = null;
+    this._quakeMode = null;
+  }
 
-	_handleQuakeModeTerminal() {
-		if (
-			!this._quakeMode ||
-			this._quakeMode._internalState === TERMINAL_STATE.DEAD
-		) {
-			const terminalId = this._settings.get_string("terminal-id");
+  _handleQuakeModeTerminal() {
+    if (
+      !this._quakeMode ||
+      this._quakeMode._internalState === TERMINAL_STATE.DEAD
+    ) {
+      const terminalId = this._settings.get_string("terminal-id");
 
-			if (!terminalId) {
-				Main.notify(_(`Select an application in Quake Terminal preferences.`));
-				return;
-			}
+      if (!terminalId) {
+        Main.notify(_(`Select an application in Quake Terminal preferences.`));
+        return;
+      }
 
-			const terminal = this._appSystem.lookup_app(terminalId);
+      const terminal = this._appSystem.lookup_app(terminalId);
 
-			if (!terminal) {
-				Main.notify(_(`No terminal found with id ${terminalId}. Skipping ...`));
-				return;
-			}
+      if (!terminal) {
+        Main.notify(_(`No terminal found with id ${terminalId}. Skipping ...`));
+        return;
+      }
 
-			this._quakeMode = new QuakeMode(terminal, this._settings);
-			return this._quakeMode.toggle();
-		}
+      this._quakeMode = new QuakeMode(terminal, this._settings);
+      return this._quakeMode.toggle();
+    }
 
-		return this._quakeMode.toggle();
-	}
+    return this._quakeMode.toggle();
+  }
 }
