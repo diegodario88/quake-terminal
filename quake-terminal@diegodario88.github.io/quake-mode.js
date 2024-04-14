@@ -3,7 +3,7 @@ import GLib from "gi://GLib";
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
 import * as Util from "./util.js";
 
-const STARTUP_TIMER_IN_SECONDS = 1;
+const STARTUP_TIMER_IN_SECONDS = 5;
 
 /**
  * Quake Mode Module
@@ -218,9 +218,9 @@ export const QuakeMode = class {
           GLib.Source.remove(this._sourceTimeoutLoopId);
           this._sourceTimeoutLoopId = null;
 
-          if (this._terminal.get_n_windows() < 1) {
+          if (!this._terminal || this._terminal.get_n_windows() < 1) {
             return reject(
-              `app '${this._terminal.id}' is launched but no windows`
+              `app '${this._terminal?.id}' is launched but no windows`
             );
           }
 
