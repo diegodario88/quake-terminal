@@ -116,7 +116,7 @@ export function setTimeoutAndRejectOnExpiration(
   rejectErrorMessage
 ) {
   const timeoutHandler = () => {
-    rejectCallbackFunction(new Error(rejectErrorMessage));
+    rejectCallbackFunction(Error(rejectErrorMessage));
     return GLib.SOURCE_REMOVE;
   };
 

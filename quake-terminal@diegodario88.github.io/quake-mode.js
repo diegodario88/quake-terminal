@@ -209,7 +209,7 @@ export const QuakeMode = class {
     this._internalState = Util.TERMINAL_STATE.STARTING;
 
     if (!this._terminal) {
-      return Promise.reject(new Error("No Terminal APP"));
+      return Promise.reject(Error("Quake-Terminal - Terminal App is null"));
     }
 
     const promiseTerminalWindowInLessThanFiveSeconds = new Promise(
@@ -218,9 +218,18 @@ export const QuakeMode = class {
           GLib.Source.remove(this._sourceTimeoutLoopId);
           this._sourceTimeoutLoopId = null;
 
-          if (!this._terminal || this._terminal.get_n_windows() < 1) {
+          if (!this._terminal) {
             return reject(
-              `app '${this._terminal?.id}' is launched but no windows`
+              Error(
+                "Quake-Terminal - Something destroyed the internal reference of terminal app"
+              )
+            );
+          }
+          if (this._terminal.get_n_windows() < 1) {
+            return reject(
+              Error(
+                `Quake-Terminal - App '${this._terminal.id}' is launched but no windows`
+              )
             );
           }
 
@@ -257,7 +266,7 @@ export const QuakeMode = class {
         this._sourceTimeoutLoopId = Util.setTimeoutAndRejectOnExpiration(
           STARTUP_TIMER_IN_SECONDS,
           reject,
-          `Timeout reached when attempting to open quake terminal`
+          `Quake-Terminal: Timeout reached after ${STARTUP_TIMER_IN_SECONDS} seconds while trying to open the Quake terminal`
         );
 
         this._terminal.open_new_window(-1);
