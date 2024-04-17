@@ -302,12 +302,15 @@ export const QuakeMode = class {
       wm.emit("kill-window-effects", this.actor);
 
       /**
-       * Listens once for the `size-changed(Meta.Window)` signal, which is emitted when the size of the toplevel
-       * window has changed, or when the size of the client window has changed.
+       * Listens once for the `Clutter.Actor::stage-views-changed` signal, which should be emitted
+       * right before the terminal resizing is complete. Even if the terminal does not need to be
+       * resized, this signal should be emitted correctly by Mutter.
+       *
+       * @see https://mutter.gnome.org/clutter/signal.Actor.stage-views-changed.html
        */
-      const sizeChangedSignalConnector = Util.once(
-        this.terminalWindow,
-        "size-changed",
+      const stageViewsChangedSignalConnector = Util.once(
+        this.actor,
+        "stage-views-changed",
         () => {
           this._internalState = Util.TERMINAL_STATE.RUNNING;
           this.actor.remove_clip();
@@ -315,7 +318,7 @@ export const QuakeMode = class {
         }
       );
 
-      this._connectedSignals.push(sizeChangedSignalConnector);
+      this._connectedSignals.push(stageViewsChangedSignalConnector);
       this._fitTerminalToMainMonitor();
     };
 
