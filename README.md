@@ -2,8 +2,11 @@
 
 ![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)
 
-[demo-quake-terminal.webm](https://github.com/diegodario88/quake-terminal/assets/25825145/1fecf726-66fc-4e96-bbca-1eb50ac5a450)
+https://github.com/diegodario88/quake-terminal/assets/25825145/eb49d9a2-e918-4f22-8ddb-25486c2cd91b
 
+## Settings
+
+![Settings](assets/screenshot-settings.png)
 
 ## Overview
 
@@ -16,7 +19,9 @@ This extension offers the following features:
 - Multi-Display Support: You have the flexibility to choose which display screen the Quake Terminal should appear on, making it even more versatile and convenient.
 
 Future Plans
- - Adding a blur effect to the terminal actor, enhancing both aesthetics and overall appeal.
+
+- Adding a blur effect to the terminal actor, enhancing both aesthetics and overall appeal.
+
 ---
 
 ## Installation
@@ -28,6 +33,7 @@ You can easily install the extension from the GNOME Extensions website:
 [![Get it on GNOME Extensions](assets/get_it_on_gnome_extensions.png)](https://extensions.gnome.org/extension/6307/quake-terminal)
 
 ### Manual Installation
+
 If you prefer manual installation, follow these steps:
 
 1. Clone this repository to your system:
@@ -45,30 +51,40 @@ git clone https://github.com/diegodario88/quake-terminal.git
 ## Contributing
 
 ### Setup
+
 1. Fork this repo on github
 2. Clone your new repo
 3. Browse to the root of the project and run the provided installation script:
+
 ```bash
 ./scripts/install.sh
 ```
+
 4. Login and log back in to use the extensions
 5. Making changes in .gschema.xml requires running:
+
 ```bash
 glib-compile-schemas quake-terminal@diegodario88.github.io/schemas/
 ```
+
 6. Repeat 3. and 4. after making code changes and 5. when necessary
 
-###  Debugging
+### Debugging
 
 - Watch extensions logs
+
 ```bash
 journalctl -f -o cat /usr/bin/gnome-shell
 ```
+
 - Watch preferences window logs
+
 ```bash
 journalctl -f -o cat /usr/bin/gjs
 ```
+
 - watch GSettings updates:
+
 ```bash
 dconf watch /org/gnome/shell/extensions/quake-terminal/
 ```
