@@ -268,8 +268,18 @@ export const QuakeMode = class {
           reject,
           `Quake-Terminal: Timeout reached after ${STARTUP_TIMER_IN_SECONDS} seconds while trying to open the Quake terminal`
         );
-
-        this._terminal.open_new_window(-1);
+        const args = this._settings.get_string("launch-args");
+        const info = this._terminal.get_app_info();
+        if (!args || !info) {
+          this._terminal.open_new_window(-1);
+          return;
+        }
+        const exec = info.get_string("Exec");
+        if (!exec) {
+          this._terminal.open_new_window(-1);
+          return;
+        }
+        GLib.spawn_command_line_async(exec + " " + args);
       }
     );
 
