@@ -8,6 +8,18 @@ https://github.com/diegodario88/quake-terminal/assets/25825145/eb49d9a2-e918-4f2
 
 ![Settings](assets/screenshot-settings.png)
 
+## Sponsors
+
+<p align="center">
+ Maintenance of this project is made possible by all the <a href="https://github.com/diegodario88/quake-terminal/graphs/contributors">contributors</a> and <a href="https://github.com/sponsors/diegodario88">sponsors</a>. If you'd like to sponsor this project and have your avatar or company logo appear below <a href="https://github.com/sponsors/diegodario88">click here</a>. 💙
+</p>
+
+<p align="center">
+<!-- sponsors --><a href="https://github.com/petre2dor"><img src="https://github.com/petre2dor.png" width="60px" alt="Petre Tudor" /></a><a href="https://github.com/freimair"><img src="https://github.com/freimair.png" width="60px" alt="Florian Reimair" /></a><a href="https://github.com/marmitar"><img src="https://github.com/marmitar.png" width="60px" alt="Tiago de Paula" /></a><a href="https://github.com/Dissonant-Tech"><img src="https://github.com/Dissonant-Tech.png" width="60px" alt="David Rodriguez" /></a><!-- sponsors -->
+</p>
+
+
+
 ## Overview
 
 The GNOME Shell Extension - Quake Terminal enhances your desktop experience by providing a Quake-style terminal that can be summoned over any workspace with ease.
