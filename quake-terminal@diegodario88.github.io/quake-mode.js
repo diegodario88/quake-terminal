@@ -22,6 +22,7 @@ export const QuakeMode = class {
     this._terminalWindowUnmanagedId = null;
     this._terminalWindowFocusId = null;
     this._terminalWindow = null;
+    this._isTaskbarConfigured = null;
 
     /** We will monkey-patch this method. Let's store the original one. */
     this._original_shouldAnimateActor = Main.wm._shouldAnimateActor;
@@ -162,6 +163,7 @@ export const QuakeMode = class {
     this._terminal = null;
     this._terminalWindow = null;
     this._internalState = Util.TERMINAL_STATE.DEAD;
+    this._isTaskbarConfigured = null;
     Main.wm._shouldAnimateActor = this._original_shouldAnimateActor;
   }
 
@@ -188,6 +190,10 @@ export const QuakeMode = class {
       !this.terminalWindow
     ) {
       return;
+    }
+
+    if (!this._isTaskbarConfigured) {
+      this._configureSkipTaskbarProperty();
     }
 
     if (this.terminalWindow.has_focus()) {
@@ -444,6 +450,8 @@ export const QuakeMode = class {
       },
       configurable: true,
     });
+
+    this._isTaskbarConfigured = true;
   }
 
   _configureActorCloseAnimation() {
