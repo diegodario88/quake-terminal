@@ -62,5 +62,10 @@
 			<summary>Hide terminal window in certain modes</summary>
   		<description>When enabled, the terminal window will not appear in overview mode or when using Alt+Tab.</description>
 		</key>
+		<key name="launch-args" type="s">
+			<default>""</default>
+			<summary>Terminal launch arguments</summary>
+  		<description>Launch arguments for the terminal app</description>
+		</key>
 	</schema>
 </schemalist>

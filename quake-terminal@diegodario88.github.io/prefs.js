@@ -598,6 +598,28 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
       Gio.SettingsBindFlags.DEFAULT
     );
 
+    // Advanced Group Settings
+    const advancedSettingsGroup = new Adw.PreferencesGroup();
+    advancedSettingsGroup.set_title(_("Advanced"));
+    advancedSettingsGroup.set_name("advanced-settings-group");
+
+    page.add(advancedSettingsGroup);
+
+    // Launch arguments
+    const launchArgRow = new Adw.EntryRow({
+      title: _("Terminal Arguments"),
+      tooltip_text: _("Terminal app launch arguments"),
+      text: settings.get_string("launch-args"),
+    });
+
+    advancedSettingsGroup.add(launchArgRow);
+
+    launchArgRow.connect("changed", () => {
+      settings.set_string("launch-args", launchArgRow.get_text());
+    });
+
+    advancedSettingsGroup.add(launchArgRow);
+
     window.add(page);
   }
 }
