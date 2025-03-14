@@ -3,10 +3,10 @@
   "version": 16,
   "name": "Quake Terminal",
   "description": "Quickly launch a terminal in Quake mode using a keyboard shortcut",
-  "shell-version": ["45", "46", "47"],
+  "shell-version": ["45", "46", "47", "48"],
   "settings-schema": "org.gnome.shell.extensions.quake-terminal",
   "url": "https://github.com/diegodario88/quake-terminal",
-  "version-name": "1.6.4",
+  "version-name": "1.6.5",
   "donations": {
     "github": "diegodario88",
     "kofi": "diegodario"
