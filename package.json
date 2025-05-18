@@ -1,0 +1,28 @@
+{
+  "name": "Quake Terminal",
+  "description": "Quickly launch a terminal in Quake mode using a keyboard shortcut",
+  "version": "1.6.5",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/diegodario88/quake-terminal"
+  },
+  "author": "Diego Dario",
+  "license": "LGPL-3.0-or-later",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/diegodario88/quake-terminal/issues"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "homepage": "https://github.com/diegodario88/quake-terminal#readme",
+  "sideEffects": false,
+  "devDependencies": {
+    "@girs/gnome-shell": "^48.0.2",
+    "eslint": "^9.27.0",
+    "eslint-config-prettier": "^10.1.5",
+    "eslint-plugin-jsdoc": "^50.6.17",
+    "prettier": "^3.5.3"
+  }
+}
