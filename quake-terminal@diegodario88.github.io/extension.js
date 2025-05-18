@@ -28,7 +28,7 @@ import * as Main from "resource:///org/gnome/shell/ui/main.js";
 import { TERMINAL_STATE } from "./util.js";
 import { QuakeMode } from "./quake-mode.js";
 
-export default class TogglerExtension extends Extension {
+export default class QuakeTerminalExtension extends Extension {
   enable() {
     this._settings = this.getSettings();
     this._appSystem = Shell.AppSystem.get_default();
