@@ -1,5 +1,8 @@
 import Clutter from "gi://Clutter";
 import GLib from "gi://GLib";
+import Gio from "gi://Gio";
+import Shell from "gi://Shell";
+import Meta from "gi://Meta";
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
 import * as Util from "./util.js";
 
@@ -14,7 +17,16 @@ const STARTUP_TIMER_IN_SECONDS = 5;
  * @module QuakeMode
  */
 export const QuakeMode = class {
+  /**
+   * Creates a new QuakeMode instance.
+   *
+   * @param {Shell.App} terminal - The terminal application instance.
+   * @param {Gio.Settings} settings - The Gio.Settings object for configuration.
+   */
   constructor(terminal, settings) {
+    console.log(
+      `*** QuakeTerminal - IsWayland = ${Meta.is_wayland_compositor()} ***`
+    );
     this._terminal = terminal;
     this._settings = settings;
     this._internalState = Util.TERMINAL_STATE.READY;
@@ -22,9 +34,11 @@ export const QuakeMode = class {
     this._terminalWindowUnmanagedId = null;
     this._terminalWindowFocusId = null;
     this._terminalWindow = null;
+    this._terminalWindowId = null;
     this._isTaskbarConfigured = null;
 
     /** We will monkey-patch this method. Let's store the original one. */
+    // @ts-ignore
     this._original_shouldAnimateActor = Main.wm._shouldAnimateActor;
 
     // Enhance the close animation behavior when exiting
@@ -36,9 +50,16 @@ export const QuakeMode = class {
 
     /**
      * An array that stores signal connections. Used to disconnect when destroy (disable) is called.
+     *
      * @type {Array<import("./util.js").SignalConnector>}
      */
     this._connectedSignals = [];
+
+    /**
+     * Stores the IDs of settings signal handlers.
+     *
+     * @type {number[]}
+     */
     this._settingsWatchingListIds = [];
 
     ["vertical-size", "horizontal-size", "horizontal-alignment"].forEach(
@@ -79,7 +100,15 @@ export const QuakeMode = class {
     }
 
     if (!this._terminalWindow) {
-      this._terminalWindow = this._terminal.get_windows()[0];
+      let windows = this._terminal.get_windows();
+
+      this._terminalWindow = windows.find(
+        (w) => w.get_id() === this._terminalWindowId
+      );
+
+      if (!this._terminalWindow) {
+        return null;
+      }
     }
 
     return this._terminalWindow;
@@ -90,6 +119,11 @@ export const QuakeMode = class {
       return null;
     }
 
+    /**
+     * The window actor for this terminal window.
+     *
+     * @type {Meta.WindowActor & { ease: Function }}
+     */
     const actor = this.terminalWindow.get_compositor_private();
 
     if (!actor) {
@@ -115,15 +149,16 @@ export const QuakeMode = class {
 
   get monitorDisplayScreenIndex() {
     if (this._settings.get_boolean("render-on-current-monitor")) {
-      return global.display.get_current_monitor();
+      return Shell.Global.get().display.get_current_monitor();
     }
 
     if (this._settings.get_boolean("render-on-primary-monitor")) {
-      return global.display.get_primary_monitor();
+      return Shell.Global.get().display.get_primary_monitor();
     }
 
     const userSelectionDisplayIndex = this._settings.get_int("monitor-screen");
-    const availableDisplaysIndexes = global.display.get_n_monitors() - 1;
+    const availableDisplaysIndexes =
+      Shell.Global.get().display.get_n_monitors() - 1;
 
     if (
       userSelectionDisplayIndex >= 0 &&
@@ -132,7 +167,7 @@ export const QuakeMode = class {
       return userSelectionDisplayIndex;
     }
 
-    return global.display.get_primary_monitor();
+    return Shell.Global.get().display.get_primary_monitor();
   }
 
   destroy() {
@@ -152,8 +187,8 @@ export const QuakeMode = class {
       this._terminalWindowUnmanagedId = null;
     }
 
-    if (this._terminalWindowFocusId && this.terminalWindow) {
-      this.terminalWindow.disconnect(this._terminalWindowFocusId);
+    if (this._terminalWindowFocusId) {
+      Shell.Global.get().display.disconnect(this._terminalWindowFocusId);
       this._terminalWindowFocusId = null;
     }
 
@@ -162,26 +197,32 @@ export const QuakeMode = class {
     this._settingsWatchingListIds = [];
     this._terminal = null;
     this._terminalWindow = null;
+    this._terminalWindowId = null;
     this._internalState = Util.TERMINAL_STATE.DEAD;
     this._isTaskbarConfigured = null;
+    // @ts-ignore
     Main.wm._shouldAnimateActor = this._original_shouldAnimateActor;
   }
 
   /**
    * Toggles the visibility of the terminal window with animations.
+   *
    * @returns {Promise<void>} A promise that resolves when the toggle operation is complete.
    */
   async toggle() {
-    if (
-      this._internalState === Util.TERMINAL_STATE.READY ||
-      this._terminal.state === Util.SHELL_APP_STATE.STOPPED
-    ) {
+    this._terminalWindow = null;
+
+    let windows = this._terminal.get_windows();
+    let ourWindow = windows.find((w) => w.get_id() === this._terminalWindowId);
+
+    if (!ourWindow) {
       try {
         await this._launchTerminalWindow();
         this._adjustTerminalWindowPosition();
       } catch (error) {
         console.error(error);
         this.destroy();
+        return;
       }
     }
 
@@ -209,6 +250,7 @@ export const QuakeMode = class {
 
   /**
    * Launches the terminal window and sets up event handlers.
+   *
    * @returns {Promise<boolean>} A promise that resolves when the terminal window is ready.
    */
   _launchTerminalWindow() {
@@ -217,6 +259,13 @@ export const QuakeMode = class {
     if (!this._terminal) {
       return Promise.reject(Error("Quake-Terminal - Terminal App is null"));
     }
+
+    const info = this._terminal.get_app_info();
+    const launchArgsMap =
+      this._settings.get_value("launch-args-map").deep_unpack() || {};
+
+    const launchArgs = launchArgsMap[info.get_id()] || "";
+    const cancellable = new Gio.Cancellable();
 
     const promiseTerminalWindowInLessThanFiveSeconds = new Promise(
       (resolve, reject) => {
@@ -240,6 +289,7 @@ export const QuakeMode = class {
           }
 
           this._terminalWindow = this._terminal.get_windows()[0];
+          this._terminalWindowId = this._terminalWindow.get_id();
 
           // Keeps the Terminal out of Overview mode and Alt-Tab window switching
           this._configureSkipTaskbarProperty();
@@ -248,16 +298,17 @@ export const QuakeMode = class {
 
           this._terminalWindowUnmanagedId = this.terminalWindow.connect(
             "unmanaged",
-            () => this.destroy()
+            () => {
+              this.destroy();
+            }
           );
 
-          this._terminalWindowFocusId = global.display.connectObject(
+          this._terminalWindowFocusId = Shell.Global.get().display.connect(
             "notify::focus-window",
             () => {
               this._handleHideOnFocusLoss();
             }
           );
-
           resolve(true);
         };
 
@@ -269,13 +320,33 @@ export const QuakeMode = class {
 
         this._connectedSignals.push(windowsChangedSignalConnector);
 
-        this._sourceTimeoutLoopId = Util.setTimeoutAndRejectOnExpiration(
-          STARTUP_TIMER_IN_SECONDS,
-          reject,
-          `Quake-Terminal: Timeout reached after ${STARTUP_TIMER_IN_SECONDS} seconds while trying to open the Quake terminal`
-        );
+        const exec = info.get_string("Exec");
+        let fullCommand = `${exec} ${launchArgs}`;
 
-        this._terminal.open_new_window(-1);
+        try {
+          const [success, argv] = GLib.shell_parse_argv(fullCommand);
+          if (success) {
+            this._spawn(argv, cancellable).catch((e) => reject(e));
+          } else {
+            reject(Error(`Failed to parse command line args: ${fullCommand}`));
+          }
+        } catch (e) {
+          reject(e);
+        }
+
+        this._sourceTimeoutLoopId = GLib.timeout_add_seconds(
+          GLib.PRIORITY_DEFAULT,
+          STARTUP_TIMER_IN_SECONDS,
+          () => {
+            cancellable.cancel();
+            reject(
+              Error(
+                `Quake-Terminal: Timeout reached after ${STARTUP_TIMER_IN_SECONDS} seconds while trying to open the Quake terminal`
+              )
+            );
+            return GLib.SOURCE_REMOVE;
+          }
+        );
       }
     );
 
@@ -291,10 +362,15 @@ export const QuakeMode = class {
       return;
     }
 
+    // @ts-ignore
     this.actor.set_clip(0, 0, this.actor.width, 0);
     this.terminalWindow.stick();
 
-    const mapSignalHandler = (sig, wm, metaWindowActor) => {
+    const mapSignalHandler = (
+      /** @type {{ off: () => void; }} */ sig,
+      /** @type {{ emit: (arg0: string, arg1: Meta.WindowActor) => void; }} */ wm,
+      /** @type {Meta.WindowActor} */ metaWindowActor
+    ) => {
       if (metaWindowActor !== this.actor) {
         return;
       }
@@ -329,7 +405,7 @@ export const QuakeMode = class {
     };
 
     const mapSignalConnector = Util.on(
-      global.window_manager,
+      Shell.Global.get().window_manager,
       "map",
       mapSignalHandler
     );
@@ -458,7 +534,14 @@ export const QuakeMode = class {
     /** We will use `self` to refer to the extension inside the patched method. */
     const self = this;
 
-    Main.wm._shouldAnimateActor = function (actor, types) {
+    // @ts-ignore
+    Main.wm._shouldAnimateActor = function (
+      /**
+       * @type {Meta.WindowActor & { ease: Function }}
+       */
+      actor,
+      /** @type {any} */ types
+    ) {
       const stack = new Error().stack;
       const forClosing = stack.includes("_destroyWindow@");
 
@@ -471,21 +554,22 @@ export const QuakeMode = class {
       }
 
       /** Store the original ease() method of the terminal actor. */
-      const originalActorEase = actor.ease;
+      const originalActorAnimate = actor.ease;
 
       /**
-       * Intercept the next call to actor.ease() to perform a custom bottom-up close animation.
+       * Intercept the next call to actor.animate() to perform a custom bottom-up close animation.
        * Afterward, immediately restore the original behavior.
        */
       actor.ease = function () {
-        actor.ease = originalActorEase;
+        actor.ease = originalActorAnimate;
 
-        actor.ease({
+        originalActorAnimate.call(actor, {
           mode: Clutter.AnimationMode.EASE_OUT_QUAD,
           translation_y: actor.height * -1,
           duration: self._settings.get_int("animation-time"),
           onComplete: () => {
-            Main.wm._destroyWindowDone(global.window_manager, actor);
+            // @ts-ignore
+            Main.wm._destroyWindowDone(Main.wm._shellwm, actor);
           },
         });
       };
@@ -501,7 +585,7 @@ export const QuakeMode = class {
       return;
     }
 
-    const focusedWindow = global.display.focus_window;
+    const focusedWindow = Shell.Global.get().display.focus_window;
 
     if (!focusedWindow) {
       return;
@@ -527,5 +611,41 @@ export const QuakeMode = class {
     }
 
     this.terminalWindow.make_above();
+  }
+
+  /**
+   * Execute a command asynchronously and check the exit status.
+   *
+   * If given, @cancellable can be used to stop the process before it finishes.
+   *
+   * @param {string[]} argv - a list of string arguments
+   * @param {Gio.Cancellable} [cancellable] - optional cancellable object
+   * @returns {Promise<void>} - The process success
+   */
+  async _spawn(argv, cancellable = null) {
+    let cancelId = 0;
+    const proc = new Gio.Subprocess({
+      argv,
+      flags: Gio.SubprocessFlags.NONE,
+    });
+    proc.init(cancellable);
+
+    if (cancellable instanceof Gio.Cancellable)
+      cancelId = cancellable.connect(() => proc.force_exit());
+
+    try {
+      const success = await proc.wait_check_async(null);
+
+      if (!success) {
+        const status = proc.get_exit_status();
+
+        throw new Gio.IOErrorEnum({
+          code: Gio.IOErrorEnum.FAILED,
+          message: `Command '${argv}' failed with exit code ${status}`,
+        });
+      }
+    } finally {
+      if (cancelId > 0) cancellable.disconnect(cancelId);
+    }
   }
 };
