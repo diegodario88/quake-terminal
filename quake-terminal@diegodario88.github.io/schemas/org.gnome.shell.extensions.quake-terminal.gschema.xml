@@ -53,14 +53,19 @@
   		<description>When enabled, terminal window will appear on top of all other non-topmost windows</description>
 		</key>
 		<key name="animation-time" type="i">
-				<default>250</default>
-				<summary>Animation time</summary>
-				<description>Duration of the dropdown animation in milliseconds</description>
+      <default>250</default>
+      <summary>Animation time</summary>
+      <description>Duration of the dropdown animation in milliseconds</description>
 		</key>
 		<key name="skip-taskbar" type="b">
 			<default>true</default>
 			<summary>Hide terminal window in certain modes</summary>
   		<description>When enabled, the terminal window will not appear in overview mode or when using Alt+Tab.</description>
 		</key>
+    <key name="launch-args-map" type="a{ss}">
+      <default>{}</default>
+      <summary>Terminal launch arguments per application</summary>
+      <description>Dictionary mapping application IDs to their terminal launch arguments</description>
+    </key>
 	</schema>
 </schemalist>

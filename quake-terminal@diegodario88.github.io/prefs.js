@@ -1,5 +1,6 @@
 import Adw from "gi://Adw";
 import GObject from "gi://GObject";
+import GLib from "gi://GLib";
 import Gdk from "gi://Gdk";
 import Gio from "gi://Gio";
 import Gtk from "gi://Gtk";
@@ -42,13 +43,19 @@ const getConnectedMonitorsList = () => {
   return monitors;
 };
 
-const isValidAccel = (mask, keyval) => {
+const isValidAccel = (
+  /** @type {number | Gdk.ModifierType} */ mask,
+  /** @type {number} */ keyval
+) => {
   return (
     Gtk.accelerator_valid(keyval, mask) ||
     (keyval === Gdk.KEY_Tab && mask !== 0)
   );
 };
 
+/**
+ * @param {Gio.DesktopAppInfo} app - Selected terminal application
+ */
 function getAppIconImage(app) {
   const appIconString = app?.get_icon()?.to_string() ?? "icon-missing";
 
@@ -80,6 +87,10 @@ const GenericObjectModel = GObject.registerClass(
     },
   },
   class GenericObjectModel extends GObject.Object {
+    /**
+     * @param {string} name - Object name
+     * @param {number} value - Object value
+     */
     _init(name, value) {
       super._init({ name, value });
     }
@@ -96,8 +107,8 @@ const AppChooserDialog = GObject.registerClass(
   },
   class AppChooserDialog extends Adw.PreferencesWindow {
     /**
-     * @param apps list of apps to display in dialog
-     * @param parent parent window, dialog will be transient for parent
+     * @param {Gio.DesktopAppInfo[]} apps list of apps to display in dialog
+     * @param {{ defaultWidth: number; defaultHeight: number; }} parent parent window, dialog will be transient for parent
      */
     _init(apps, parent) {
       super._init({
@@ -118,7 +129,9 @@ const AppChooserDialog = GObject.registerClass(
       apps.forEach((app) => this._addAppRow(app));
     }
 
-    /** for given app add row to selectable list */
+    /**
+     * @param {Gio.DesktopAppInfo} app - The terminal application
+     */
     _addAppRow(app) {
       const row = new Adw.ActionRow({
         title: app.get_display_name(),
@@ -138,6 +151,12 @@ const AppChooserDialog = GObject.registerClass(
 );
 
 export default class QuakeTerminalPreferences extends ExtensionPreferences {
+  /**
+   * Fills the preferences window with extension settings UI.
+   *
+   * @param {Adw.PreferencesWindow} window - The preferences window to populate.
+   * @returns {Promise<void>}
+   */
   fillPreferencesWindow(window) {
     const settings = this.getSettings();
 
@@ -222,6 +241,7 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
       const helpDialog = new Adw.Window({
         title: "About terminal application",
         modal: true,
+        // @ts-ignore
         transient_for: page.get_root(),
         hide_on_close: true,
         width_request: 360,
@@ -238,6 +258,35 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
     applicationIDRow.add_suffix(helpButton);
     applicationIDRow.activatable_widget = gtkIcon;
 
+    // Custom terminal arguments per application
+    const launchArgsMap =
+      settings.get_value("launch-args-map").deep_unpack() || {};
+    const currentAppArgs = launchArgsMap[terminalApplicationId] || "";
+
+    const launchArgRow = new Adw.EntryRow({
+      title: _("Launch Options"),
+      tooltip_text: _(
+        "Optional command-line arguments to customize how the terminal starts for this application. For example: -o font_size=18"
+      ),
+      text: currentAppArgs,
+      show_apply_button: true,
+    });
+
+    launchArgRow.connect("apply", () => {
+      const applyTerminalApplicationId = settings.get_string("terminal-id");
+      const applyLaunchArgsMap =
+        settings.get_value("launch-args-map").deep_unpack() || {};
+
+      const updatedMap = { ...applyLaunchArgsMap };
+      updatedMap[applyTerminalApplicationId] = launchArgRow.text;
+      settings.set_value(
+        "launch-args-map",
+        new GLib.Variant("a{ss}", updatedMap)
+      );
+      launchArgRow.get_root().set_focus(null);
+    });
+
+    applicationSettingsGroup.add(launchArgRow);
     applicationIDRow.connect("activated", () => {
       const allApps = Gio.app_info_get_all();
 
@@ -253,6 +302,7 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
             return false;
           }
 
+          // @ts-ignore
           const appCategories = app.get_categories();
           if (!appCategories) {
             return false;
@@ -262,6 +312,7 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
         })
         .sort((a, b) => a.get_id().localeCompare(b.get_id()));
 
+      // @ts-ignore
       const appChooserDialog = new AppChooserDialog(selectableApps, window);
 
       appChooserDialog.connect("app-selected", (_source, appId) => {
@@ -275,6 +326,12 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 
         gtkIcon.clear();
         gtkIcon.set_from_gicon(Gio.icon_new_for_string(appIconString));
+
+        const settingsArgsMap =
+          settings.get_value("launch-args-map").deep_unpack() || {};
+
+        const currentSelectedAppArgs = settingsArgsMap[appId] || "";
+        launchArgRow.text = currentSelectedAppArgs;
       });
 
       appChooserDialog.present();
@@ -326,6 +383,7 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 
       const editor = new Adw.Window({
         modal: true,
+        // @ts-ignore
         transient_for: page.get_root(),
         hide_on_close: true,
         width_request: 400,
@@ -336,7 +394,7 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 
       editor.add_controller(ctl);
 
-      ctl.connect("key-pressed", (_, keyval, keycode, state) => {
+      ctl.connect("key-pressed", (__, keyval, keycode, state) => {
         let mask = state & Gtk.accelerator_get_default_mod_mask();
         mask &= ~Gdk.ModifierType.LOCK_MASK;
 
@@ -417,14 +475,16 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 
     // Monitor Screen
     const monitorScreenModel = new Gio.ListStore({
-      item_type: GenericObjectModel,
+      item_type: GenericObjectModel.$gtype,
     });
 
     const monitorScreens = getConnectedMonitorsList();
 
     for (const [idx, monitor] of monitorScreens.entries()) {
       const monitorScreen = new GenericObjectModel(
+        // @ts-ignore
         `${monitor.description}`.toUpperCase(),
+        // @ts-ignore
         idx
       );
       monitorScreenModel.append(monitorScreen);
@@ -433,7 +493,11 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
       title: _("Display"),
       subtitle: _("Which display should the terminal be rendered on"),
       model: monitorScreenModel,
-      expression: new Gtk.PropertyExpression(GenericObjectModel, null, "name"),
+      expression: Gtk.PropertyExpression.new(
+        GenericObjectModel.$gtype,
+        null,
+        "name"
+      ),
       selected: settings.get_int("monitor-screen"),
       sensitive:
         !settings.get_boolean("render-on-current-monitor") &&
@@ -482,7 +546,7 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
       subtitle: _("Duration of the dropdown animation in milliseconds"),
       adjustment: new Gtk.Adjustment({
         lower: 0,
-        "step-increment": 5,
+        step_increment: 5,
         upper: 500,
         value: settings.get_int("animation-time"),
       }),
@@ -508,7 +572,7 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
       subtitle: _("Terminal vertical distance as a percentage"),
       adjustment: new Gtk.Adjustment({
         lower: 30,
-        "step-increment": 5,
+        step_increment: 5,
         upper: 100,
         value: settings.get_int("vertical-size"),
       }),
@@ -528,7 +592,7 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
       subtitle: _("Terminal horizontal distance as a percentage"),
       adjustment: new Gtk.Adjustment({
         lower: 30,
-        "step-increment": 5,
+        step_increment: 5,
         upper: 100,
         value: settings.get_int("horizontal-size"),
       }),
@@ -544,10 +608,11 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 
     // Horizontal Alignment
     const horizontalAlignmentModel = new Gio.ListStore({
-      item_type: GenericObjectModel,
+      item_type: GenericObjectModel.$gtype,
     });
 
     ["Left", "Right", "Center"].forEach((hAlign, idx) => {
+      // @ts-ignore
       const horizontalAlignment = new GenericObjectModel(hAlign, idx);
       horizontalAlignmentModel.append(horizontalAlignment);
     });
@@ -556,7 +621,11 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
       title: _("Horizontal Alignment"),
       subtitle: _("Control the value for horizontal alignment"),
       model: horizontalAlignmentModel,
-      expression: new Gtk.PropertyExpression(GenericObjectModel, null, "name"),
+      expression: Gtk.PropertyExpression.new(
+        GenericObjectModel.$gtype,
+        null,
+        "name"
+      ),
       selected: settings.get_int("horizontal-alignment"),
     });
 
@@ -599,5 +668,6 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
     );
 
     window.add(page);
+    return Promise.resolve();
   }
 }
