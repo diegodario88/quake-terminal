@@ -1,5 +1,4 @@
 import GObject from "gi://GObject";
-import GLib from "gi://GLib";
 
 /**
  * Signal Connector
@@ -26,6 +25,13 @@ import GLib from "gi://GLib";
  * @module SignalConnector
  */
 export class SignalConnector {
+  /**
+   * Connects a handler to a named signal on the target.
+   *
+   * @param {GObject.Object} target - The GObject instance to connect the signal to.
+   * @param {string} name - The name of the signal.
+   * @param {Function} handler - The function to handle the signal.
+   */
   constructor(target, name, handler) {
     this.name = name;
     this.target = target;
@@ -39,7 +45,7 @@ export class SignalConnector {
    *
    * The `handler_id` becomes invalid and may be reused.
    *
-   * @method off
+   * @function off
    * @returns {void}
    */
   off() {
@@ -63,9 +69,9 @@ export class SignalConnector {
  * Subscribe to a signal for continuous updates.
  *
  * @function on
- * @param {object} target - The target object emitting the signal.
+ * @param {GObject.Object} target - The GObject instance to connect the signal to.
  * @param {string} signalName - The name of the signal to subscribe to.
- * @param {function} handler - The callback function to execute when the signal is emitted.
+ * @param {Function} handler - The callback function to execute when the signal is emitted.
  * @returns {SignalConnector} - A SignalConnector instance representing the connection.
  */
 export function on(target, signalName, handler) {
@@ -77,15 +83,18 @@ export function on(target, signalName, handler) {
  * Subscribe to a signal for a single emission, automatically disconnecting afterward.
  *
  * @function once
- * @param {object} target - The target object emitting the signal.
+ * @param {GObject.Object} target - The GObject instance to connect the signal to.
  * @param {string} signalName - The name of the signal to subscribe to.
- * @param {function} handler - The callback function to execute when the signal is emitted.
+ * @param {Function} handler - The callback function to execute when the signal is emitted.
  * @returns {SignalConnector} - A SignalConnector instance representing the connection.
  */
 export function once(target, signalName, handler) {
   let disconnected = false;
 
-  const signalOnceHandler = (signal, ...args) => {
+  const signalOnceHandler = (
+    /** @type {{ off: () => void; }} */ signal,
+    /** @type {any[]} */ ...args
+  ) => {
     // Ensure we run the callback only once
     if (disconnected) {
       return;
@@ -99,34 +108,6 @@ export function once(target, signalName, handler) {
   const onceSignal = new SignalConnector(target, signalName, signalOnceHandler);
 
   return onceSignal;
-}
-
-/**
- * Sets a timeout and rejects with an error message upon expiration.
- *
- * @function setTimeoutAndRejectOnExpiration
- * @param {number} seconds - The duration of the timeout in seconds.
- * @param {function} rejectCallbackFunction - A callback function to reject with an error.
- * @param {string} rejectErrorMessage - The error message for rejection.
- * @returns {number} -  the ID (greater than 0) of the event source.
- */
-export function setTimeoutAndRejectOnExpiration(
-  seconds,
-  rejectCallbackFunction,
-  rejectErrorMessage
-) {
-  const timeoutHandler = () => {
-    rejectCallbackFunction(Error(rejectErrorMessage));
-    return GLib.SOURCE_REMOVE;
-  };
-
-  const sourceTimeoutLoopId = GLib.timeout_add_seconds(
-    GLib.PRIORITY_DEFAULT,
-    seconds,
-    timeoutHandler
-  );
-
-  return sourceTimeoutLoopId;
 }
 
 export const TERMINAL_STATE = {
