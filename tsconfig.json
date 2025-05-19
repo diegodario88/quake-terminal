@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "outDir": "./dist",
+    "sourceMap": false,
+    "target": "ES2022",
+    "checkJs": true,
+    "allowJs": true
+    "lib": [
+      "ES2022"
+    ],
+  },
+  "include": ["@types/gnome-shell/ambient.d.ts", "**/*.js"]
+}
