@@ -2,37 +2,33 @@
 
 ![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)
 
+<p align="center">
+  <img src="assets/terminal.png" width="200" alt="A black terminal emulator icon with traditional bash symbol" />
+</p>
+
+<p align="center"><em>Quake Terminal: A drop-down interface for GNOME Shell that launches your preferred terminal emulator in Quake mode, inspired by classic Quake games.</em></p>
+
+## Demo
+
 https://github.com/diegodario88/quake-terminal/assets/25825145/eb49d9a2-e918-4f22-8ddb-25486c2cd91b
 
 ## Settings
 
 ![Settings](assets/screenshot-settings.png)
 
-## Sponsors
-
-<p align="center">
- Maintenance of this project is made possible by all the <a href="https://github.com/diegodario88/quake-terminal/graphs/contributors">contributors</a> and <a href="https://github.com/sponsors/diegodario88">sponsors</a>. If you'd like to sponsor this project and have your avatar or company logo appear below <a href="https://github.com/sponsors/diegodario88">click here</a>. 💙
-</p>
-
-<p align="center">
-<!-- sponsors --><a href="https://github.com/petre2dor"><img src="https://github.com/petre2dor.png" width="60px" alt="Petre Tudor" /></a><a href="https://github.com/freimair"><img src="https://github.com/freimair.png" width="60px" alt="Florian Reimair" /></a><a href="https://github.com/marmitar"><img src="https://github.com/marmitar.png" width="60px" alt="Tiago de Paula" /></a><a href="https://github.com/Dissonant-Tech"><img src="https://github.com/Dissonant-Tech.png" width="60px" alt="David Rodriguez" /></a><!-- sponsors -->
-</p>
-
-
-
 ## Overview
 
-The GNOME Shell Extension - Quake Terminal enhances your desktop experience by providing a Quake-style terminal that can be summoned over any workspace with ease.
+The GNOME Shell Extension - Quake Terminal enhances your desktop by providing a drop-down interface, inspired by classic Quake games, that can instantly launch your preferred terminal emulator over any workspace.
 
-This extension offers the following features:
+Key features include:
 
-- Quick Activation: You can summon the Quake Terminal using a single keyboard shortcut or a customizable key combination, ensuring fast and efficient access.
-- Workspace Integration: The Quake Terminal remains discreetly hidden in overview mode and during Alt+Tab switching, ensuring it doesn't obstruct your workspace when not in use.
-- Multi-Display Support: You have the flexibility to choose which display screen the Quake Terminal should appear on, making it even more versatile and convenient.
+- **Quick Activation:** Instantly summon your preferred terminal emulator in Quake mode using a single keyboard shortcut or a customizable key combination for fast, efficient access.
+- **Workspace Integration:** The terminal remains hidden in overview mode and during Alt+Tab switching, ensuring it never obstructs your workflow when not in use.
+- **Multi-Display Support:** Choose which display the Quake Terminal appears on, offering flexibility for multi-monitor setups.
+- **Custom Arguments:** Launch your terminal emulator with custom arguments when opened by Quake Terminal, allowing tailored configurations.
+- **Aesthetic Animations:** Smooth sizing and animation timing for a polished user experience.
 
-Future Plans
-
-- Adding a blur effect to the terminal actor, enhancing both aesthetics and overall appeal.
+> **Note:** This extension does not provide a terminal emulator. It works with the terminal application already installed on your system.
 
 ---
 
@@ -57,29 +53,31 @@ git clone https://github.com/diegodario88/quake-terminal.git
 2. Run the provided installation script:
 
 ```bash
-./scripts/install.sh
+make install
 ```
 
 ## Contributing
 
 ### Setup
 
-1. Fork this repo on github
+1. Fork this repo on Github
 2. Clone your new repo
 3. Browse to the root of the project and run the provided installation script:
 
 ```bash
-./scripts/install.sh
+npm install
 ```
-
-4. Login and log back in to use the extensions
-5. Making changes in .gschema.xml requires running:
 
 ```bash
-glib-compile-schemas quake-terminal@diegodario88.github.io/schemas/
+make install
 ```
 
-6. Repeat 3. and 4. after making code changes and 5. when necessary
+4. Make your changes to the code
+5. Start a nested GNOME Shell session to test your changes
+
+```bash
+dbus-run-session -- gnome-shell --nested --wayland
+```
 
 ### Debugging
 
@@ -95,7 +93,7 @@ journalctl -f -o cat /usr/bin/gnome-shell
 journalctl -f -o cat /usr/bin/gjs
 ```
 
-- watch GSettings updates:
+- Watch GSettings updates:
 
 ```bash
 dconf watch /org/gnome/shell/extensions/quake-terminal/
@@ -103,7 +101,7 @@ dconf watch /org/gnome/shell/extensions/quake-terminal/
 
 ## GJS docs
 
-GNOME Shell Extensions dcoumentation and tutorial: https://gjs.guide/extensions/
+GNOME Shell Extensions documentation and tutorial: https://gjs.guide/extensions/
 
 ## Like this Extension?
 
@@ -111,4 +109,6 @@ If you want to help me with this, consider buying me a coffee. :)
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Y8Y8Q12UV)
 
-Made with ❤️
+---
+
+Made with ❤️ by [Diego Dario](https://github.com/diegodario88)
