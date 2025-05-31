@@ -25,7 +25,6 @@ import {
   gettext as _,
 } from "resource:///org/gnome/shell/extensions/extension.js";
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
-import { TERMINAL_STATE } from "./util.js";
 import { QuakeMode } from "./quake-mode.js";
 
 export default class QuakeTerminalExtension extends Extension {
@@ -41,7 +40,8 @@ export default class QuakeTerminalExtension extends Extension {
       Shell.ActionMode.NORMAL |
         Shell.ActionMode.OVERVIEW |
         Shell.ActionMode.POPUP,
-      () => this._handleQuakeModeTerminal()
+      () =>
+        this._handleQuakeModeTerminal().catch((reason) => console.log(reason))
     );
   }
 
@@ -60,7 +60,7 @@ export default class QuakeTerminalExtension extends Extension {
   _handleQuakeModeTerminal() {
     if (
       !this._quakeMode ||
-      this._quakeMode._internalState === TERMINAL_STATE.DEAD
+      this._quakeMode._internalState === QuakeMode.LIFECYCLE.DEAD
     ) {
       const terminalId = this._settings.get_string("terminal-id");
 
