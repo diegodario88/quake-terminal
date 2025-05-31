@@ -4,7 +4,6 @@ import Gio from "gi://Gio";
 import Shell from "gi://Shell";
 import Meta from "gi://Meta";
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
-import * as Util from "./util.js";
 
 const STARTUP_TIMER_IN_SECONDS = 5;
 
@@ -17,6 +16,14 @@ const STARTUP_TIMER_IN_SECONDS = 5;
  * @module QuakeMode
  */
 export const QuakeMode = class {
+  static LIFECYCLE = {
+    READY: "READY",
+    STARTING: "STARTING",
+    CREATED_ACTOR: "CREATED_ACTOR",
+    RUNNING: "RUNNING",
+    DEAD: "DEAD",
+  };
+
   /**
    * Creates a new QuakeMode instance.
    *
@@ -25,16 +32,30 @@ export const QuakeMode = class {
    */
   constructor(terminal, settings) {
     console.log(
-      `*** QuakeTerminal - IsWayland = ${Meta.is_wayland_compositor()} ***`
+      `*** QuakeTerminal@constructor - IsWayland = ${Meta.is_wayland_compositor()} ***`
     );
+    console.log(
+      `*** QuakeTerminal@constructor - Terminal App = ${terminal.get_name()} ***`
+    );
+
+    /**
+     *@type {Shell.App}
+     */
     this._terminal = terminal;
     this._settings = settings;
-    this._internalState = Util.TERMINAL_STATE.READY;
+    this._internalState = QuakeMode.LIFECYCLE.READY;
+
     this._sourceTimeoutLoopId = null;
     this._terminalWindowUnmanagedId = null;
     this._terminalWindowFocusId = null;
+    this._wmMapSignalId = null;
+    this._terminalChangedId = null;
+    this._actorStageViewChangedId = null;
+
+    /**
+     *@type {Meta.Window}
+     */
     this._terminalWindow = null;
-    this._terminalWindowId = null;
     this._isTaskbarConfigured = null;
 
     /** We will monkey-patch this method. Let's store the original one. */
@@ -43,17 +64,6 @@ export const QuakeMode = class {
 
     // Enhance the close animation behavior when exiting
     this._configureActorCloseAnimation();
-
-    if (this._terminal.state === Util.SHELL_APP_STATE.RUNNING) {
-      this._internalState = Util.TERMINAL_STATE.RUNNING;
-    }
-
-    /**
-     * An array that stores signal connections. Used to disconnect when destroy (disable) is called.
-     *
-     * @type {Array<import("./util.js").SignalConnector>}
-     */
-    this._connectedSignals = [];
 
     /**
      * Stores the IDs of settings signal handlers.
@@ -96,18 +106,44 @@ export const QuakeMode = class {
 
   get terminalWindow() {
     if (!this._terminal) {
+      console.log(
+        `*** QuakeTerminal@terminalWindow - There's no terminal application ***`
+      );
+      console.log(
+        `*** QuakeTerminal@terminalWindow - Current state ${this._internalState}  ***`
+      );
       return null;
     }
 
     if (!this._terminalWindow) {
-      let windows = this._terminal.get_windows();
-
-      this._terminalWindow = windows.find(
-        (w) => w.get_id() === this._terminalWindowId
+      console.log(
+        `*** QuakeTerminal@terminalWindow - There's no WindowActor, finding one ... ***`
       );
+      let ourWindow = this._terminal.get_windows().find((w) => {
+        /**
+         * The window actor for this terminal window.
+         *
+         * @type {Meta.WindowActor & { ease: Function }}
+         */
+        const actor = w.get_compositor_private();
+        return actor.get_name() === "quake-terminal" && w.is_alive;
+      });
 
-      if (!this._terminalWindow) {
+      if (!ourWindow) {
         return null;
+      }
+
+      this._terminalWindow = ourWindow;
+      if (!this._terminalWindowUnmanagedId) {
+        this._terminalWindowUnmanagedId = this._terminalWindow.connect(
+          "unmanaged",
+          () => {
+            console.log(
+              `*** QuakeTerminal@Unmanaged Called unmanaged after suspend or lockscreen ***`
+            );
+            this.destroy();
+          }
+        );
       }
     }
 
@@ -116,6 +152,7 @@ export const QuakeMode = class {
 
   get actor() {
     if (!this.terminalWindow) {
+      console.log(`*** QuakeTerminal@actor - There's no terminalWindow ***`);
       return null;
     }
 
@@ -127,6 +164,7 @@ export const QuakeMode = class {
     const actor = this.terminalWindow.get_compositor_private();
 
     if (!actor) {
+      console.log(`*** QuakeTerminal@actor - There's no actor ***`);
       return null;
     }
 
@@ -171,6 +209,7 @@ export const QuakeMode = class {
   }
 
   destroy() {
+    console.log(`*** QuakeTerminal@destroy - Starting destroy action ***`);
     if (this._sourceTimeoutLoopId) {
       GLib.Source.remove(this._sourceTimeoutLoopId);
       this._sourceTimeoutLoopId = null;
@@ -182,9 +221,19 @@ export const QuakeMode = class {
       });
     }
 
+    if (this.actor && this._actorStageViewChangedId) {
+      this.actor.disconnect(this._actorStageViewChangedId);
+      this._actorStageViewChangedId = null;
+    }
+
     if (this._terminalWindowUnmanagedId && this.terminalWindow) {
       this.terminalWindow.disconnect(this._terminalWindowUnmanagedId);
       this._terminalWindowUnmanagedId = null;
+    }
+
+    if (this._terminalChangedId && this._terminal) {
+      this._terminal.disconnect(this._terminalChangedId);
+      this._terminalChangedId = null;
     }
 
     if (this._terminalWindowFocusId) {
@@ -192,13 +241,15 @@ export const QuakeMode = class {
       this._terminalWindowFocusId = null;
     }
 
-    this._connectedSignals.forEach((s) => s.off());
-    this._connectedSignals = [];
+    if (this._wmMapSignalId) {
+      Shell.Global.get().window_manager.disconnect(this._wmMapSignalId);
+      this._wmMapSignalId = null;
+    }
+
     this._settingsWatchingListIds = [];
     this._terminal = null;
     this._terminalWindow = null;
-    this._terminalWindowId = null;
-    this._internalState = Util.TERMINAL_STATE.DEAD;
+    this._internalState = QuakeMode.LIFECYCLE.DEAD;
     this._isTaskbarConfigured = null;
     // @ts-ignore
     Main.wm._shouldAnimateActor = this._original_shouldAnimateActor;
@@ -210,27 +261,15 @@ export const QuakeMode = class {
    * @returns {Promise<void>} A promise that resolves when the toggle operation is complete.
    */
   async toggle() {
-    this._terminalWindow = null;
-
-    let windows = this._terminal.get_windows();
-    let ourWindow = windows.find((w) => w.get_id() === this._terminalWindowId);
-
-    if (!ourWindow) {
+    if (!this.terminalWindow) {
       try {
         await this._launchTerminalWindow();
         this._adjustTerminalWindowPosition();
       } catch (error) {
-        console.error(error);
+        console.log(`*** QuakeTerminal@toggle - Catch error ${error} ***`);
         this.destroy();
         return;
       }
-    }
-
-    if (
-      this._internalState !== Util.TERMINAL_STATE.RUNNING ||
-      !this.terminalWindow
-    ) {
-      return;
     }
 
     if (!this._isTaskbarConfigured) {
@@ -245,6 +284,8 @@ export const QuakeMode = class {
       return this._showTerminalWithAnimationTopDown();
     }
 
+    console.log(this.terminalWindow.get_pid);
+
     Main.activateWindow(this.terminalWindow);
   }
 
@@ -254,13 +295,16 @@ export const QuakeMode = class {
    * @returns {Promise<boolean>} A promise that resolves when the terminal window is ready.
    */
   _launchTerminalWindow() {
-    this._internalState = Util.TERMINAL_STATE.STARTING;
+    this._internalState = QuakeMode.LIFECYCLE.STARTING;
 
     if (!this._terminal) {
       return Promise.reject(Error("Quake-Terminal - Terminal App is null"));
     }
 
     const info = this._terminal.get_app_info();
+    console.log(
+      `*** QuakeTerminal@_launchTerminalWindow - launching a new window for terminal ${info.get_name()}  ***`
+    );
     const launchArgsMap =
       this._settings.get_value("launch-args-map").deep_unpack() || {};
 
@@ -280,6 +324,16 @@ export const QuakeMode = class {
               )
             );
           }
+
+          if (this._internalState !== QuakeMode.LIFECYCLE.STARTING) {
+            console.log(
+              `*** QuakeTerminal@_launchTerminalWindow - Not in STARTING state, ignoring windows-changed signal ***`
+            );
+
+            this._terminal.disconnect(this._terminalChangedId);
+            return;
+          }
+
           if (this._terminal.get_n_windows() < 1) {
             return reject(
               Error(
@@ -288,8 +342,16 @@ export const QuakeMode = class {
             );
           }
 
-          this._terminalWindow = this._terminal.get_windows()[0];
-          this._terminalWindowId = this._terminalWindow.get_id();
+          const ourWindow = this._terminal.get_windows()[0];
+          /**
+           * The window actor for this terminal window.
+           *
+           * @type {Meta.WindowActor & { ease: Function }}
+           */
+          const actor = ourWindow.get_compositor_private();
+          actor.set_name("quake-terminal");
+          this._terminalWindow = ourWindow;
+          this._internalState = QuakeMode.LIFECYCLE.CREATED_ACTOR;
 
           // Keeps the Terminal out of Overview mode and Alt-Tab window switching
           this._configureSkipTaskbarProperty();
@@ -299,6 +361,7 @@ export const QuakeMode = class {
           this._terminalWindowUnmanagedId = this.terminalWindow.connect(
             "unmanaged",
             () => {
+              console.log(`*** QuakeTerminal@Unmanaged Called unmanaged ***`);
               this.destroy();
             }
           );
@@ -312,13 +375,10 @@ export const QuakeMode = class {
           resolve(true);
         };
 
-        const windowsChangedSignalConnector = Util.once(
-          this._terminal,
+        this._terminalChangedId = this._terminal.connect(
           "windows-changed",
           shellAppWindowsChangedHandler
         );
-
-        this._connectedSignals.push(windowsChangedSignalConnector);
 
         const exec = info.get_string("Exec");
         let fullCommand = `${exec} ${launchArgs}`;
@@ -359,6 +419,9 @@ export const QuakeMode = class {
    */
   _adjustTerminalWindowPosition() {
     if (!this.terminalWindow || !this.actor) {
+      console.log(
+        `*** QuakeTerminal@_adjustTerminalWindowPosition - No terminalWindow || actor ***`
+      );
       return;
     }
 
@@ -367,17 +430,20 @@ export const QuakeMode = class {
     this.terminalWindow.stick();
 
     const mapSignalHandler = (
-      /** @type {{ off: () => void; }} */ sig,
-      /** @type {{ emit: (arg0: string, arg1: Meta.WindowActor) => void; }} */ wm,
+      /** @type {Shell.WM} */ wm,
       /** @type {Meta.WindowActor} */ metaWindowActor
     ) => {
       if (metaWindowActor !== this.actor) {
+        console.log(
+          `*** QuakeTerminal@mapSignalHandler - ${metaWindowActor.get_name()} is not our actor, skipping. ***`
+        );
         return;
       }
 
       // This code should run exclusively during the initial creation of the terminal application
       // to ensure an immediate disconnection, we turn off the signal.
-      sig.off();
+      Shell.Global.get().window_manager.disconnect(this._wmMapSignalId);
+      this._wmMapSignalId = null;
 
       // Since our terminal application has his own "drop-down" showing animation, we must get rid of any other effect
       // that the windows have when they are created.
@@ -390,34 +456,38 @@ export const QuakeMode = class {
        *
        * @see https://mutter.gnome.org/clutter/signal.Actor.stage-views-changed.html
        */
-      const stageViewsChangedSignalConnector = Util.once(
-        this.actor,
+      this._actorStageViewChangedId = this.actor.connect(
         "stage-views-changed",
         () => {
-          this._internalState = Util.TERMINAL_STATE.RUNNING;
+          console.log(
+            `*** QuakeTerminal@_adjustTerminalWindowPosition - State ${this._internalState} ***`
+          );
+
+          if (this._internalState !== QuakeMode.LIFECYCLE.CREATED_ACTOR) {
+            console.log(
+              `*** QuakeTerminal@_adjustTerminalWindowPosition - Not in CREATED_ACTOR state, ignoring stage-views-changed signal ***`
+            );
+            this.actor.disconnect(this._actorStageViewChangedId);
+            this._actorStageViewChangedId = null;
+            return;
+          }
+
+          this._internalState = QuakeMode.LIFECYCLE.RUNNING;
           this.actor.remove_clip();
           this._showTerminalWithAnimationTopDown();
         }
       );
 
-      this._connectedSignals.push(stageViewsChangedSignalConnector);
       this._fitTerminalToMainMonitor();
     };
 
-    const mapSignalConnector = Util.on(
-      Shell.Global.get().window_manager,
+    this._wmMapSignalId = Shell.Global.get().window_manager.connect(
       "map",
       mapSignalHandler
     );
-
-    this._connectedSignals.push(mapSignalConnector);
   }
 
   _shouldAvoidAnimation() {
-    if (this._internalState !== Util.TERMINAL_STATE.RUNNING) {
-      return true;
-    }
-
     if (!this.actor) {
       return true;
     }
