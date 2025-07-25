@@ -1,0 +1,226 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-06-01 00:32+0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../src/extension.js:68
+msgid "Select an application in Quake Terminal preferences."
+msgstr ""
+
+#: ../src/prefs.js:164
+msgid "Quake Terminal Settings"
+msgstr ""
+
+#: ../src/prefs.js:168
+msgid "Application"
+msgstr ""
+
+#: ../src/prefs.js:181
+msgid "Terminal Application"
+msgstr ""
+
+#: ../src/prefs.js:267
+msgid "Launch Options"
+msgstr ""
+
+#: ../src/prefs.js:269
+msgid ""
+"Optional command-line arguments to customize how the terminal starts for "
+"this application. For example: -o font_size=18"
+msgstr ""
+
+#: ../src/prefs.js:341
+msgid "General"
+msgstr ""
+
+#: ../src/prefs.js:349
+msgid "Toggle Shortcut"
+msgstr ""
+
+#: ../src/prefs.js:350
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:12
+msgid "Shortcut to activate the terminal application"
+msgstr ""
+
+#: ../src/prefs.js:354
+msgid "Select a shortcut"
+msgstr ""
+
+#: ../src/prefs.js:368
+msgid "Enter new shortcut to toggle Quake Terminal"
+msgstr ""
+
+#: ../src/prefs.js:378
+msgid "Set Shortcut"
+msgstr ""
+
+#: ../src/prefs.js:430
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:47
+msgid "Auto Hide Terminal"
+msgstr ""
+
+#: ../src/prefs.js:432
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:48
+msgid "When enabled, this hides the Terminal window when it loses focus"
+msgstr ""
+
+#: ../src/prefs.js:446
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:32
+msgid "Show on the current Display"
+msgstr ""
+
+#: ../src/prefs.js:448
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:33
+msgid ""
+"When enabled, the Terminal will be shown on the Display that currently has "
+"the mouse pointer"
+msgstr ""
+
+#: ../src/prefs.js:462
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:37
+msgid "Show on the primary Display"
+msgstr ""
+
+#: ../src/prefs.js:464
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:38
+msgid ""
+"When enabled, the Terminal will be shown on the Display set as Primary in "
+"Gnome Display settings"
+msgstr ""
+
+#: ../src/prefs.js:493
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:42
+msgid "Display"
+msgstr ""
+
+#: ../src/prefs.js:494
+msgid "Which display should the terminal be rendered on"
+msgstr ""
+
+#: ../src/prefs.js:545
+msgid "Animation Time"
+msgstr ""
+
+#: ../src/prefs.js:546
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:58
+msgid "Duration of the dropdown animation in milliseconds"
+msgstr ""
+
+#: ../src/prefs.js:564
+msgid "Position"
+msgstr ""
+
+#: ../src/prefs.js:571
+msgid "Vertical Size"
+msgstr ""
+
+#: ../src/prefs.js:572
+msgid "Terminal vertical distance as a percentage"
+msgstr ""
+
+#: ../src/prefs.js:591
+msgid "Horizontal Size"
+msgstr ""
+
+#: ../src/prefs.js:592
+msgid "Terminal horizontal distance as a percentage"
+msgstr ""
+
+#: ../src/prefs.js:621
+msgid "Horizontal Alignment"
+msgstr ""
+
+#: ../src/prefs.js:622
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:28
+msgid "Control the value for horizontal alignment"
+msgstr ""
+
+#: ../src/prefs.js:640
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:52
+msgid "Always On Top"
+msgstr ""
+
+#: ../src/prefs.js:642
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:53
+msgid ""
+"When enabled, terminal window will appear on top of all other non-topmost "
+"windows"
+msgstr ""
+
+#: ../src/prefs.js:656
+msgid "Hide In Certain Modes"
+msgstr ""
+
+#: ../src/prefs.js:658
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:63
+msgid ""
+"When enabled, the terminal window will not appear in overview mode or when "
+"using Alt+Tab."
+msgstr ""
+
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:6
+msgid "Terminal App"
+msgstr ""
+
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:7
+msgid ""
+"The application path used as a reference when initializing a new terminal"
+msgstr ""
+
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:11
+msgid "Toggle Terminal"
+msgstr ""
+
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:16
+msgid "Terminal Vertical Size"
+msgstr ""
+
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:17
+msgid "Specify the vertical size of the terminal in percentage"
+msgstr ""
+
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:21
+msgid "Terminal Horizontal Size"
+msgstr ""
+
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:22
+msgid "Specify the horizontal size of the terminal in percentage"
+msgstr ""
+
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:27
+msgid "Terminal Horizontal Alignment"
+msgstr ""
+
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:43
+msgid "Specify the display where the terminal should be rendered"
+msgstr ""
+
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:57
+msgid "Animation time"
+msgstr ""
+
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:62
+msgid "Hide terminal window in certain modes"
+msgstr ""
+
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:67
+msgid "Terminal launch arguments per application"
+msgstr ""
+
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:68
+msgid "Dictionary mapping application IDs to their terminal launch arguments"
+msgstr ""
