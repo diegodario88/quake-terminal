@@ -426,7 +426,11 @@ export const QuakeMode = class {
     }
 
     // @ts-ignore
-    this.actor.set_clip(0, 0, this.actor.width, 0);
+    // Avoid set_clip here — it relies on stage-views-changed to remove the clip later,
+    // but that signal is not reliably fired in some GNOME Shell environments (e.g. fast-starting terminals like kitty).
+    // Instead, we use set_size(0, 0) to safely initialize without rendering, and let the animation logic handle the rest.
+    this.actor.set_position(0, 0);
+    this.actor.set_size(0, 0);
     this.terminalWindow.stick();
 
     const mapSignalHandler = (
@@ -473,7 +477,6 @@ export const QuakeMode = class {
           }
 
           this._internalState = QuakeMode.LIFECYCLE.RUNNING;
-          this.actor.remove_clip();
           this._showTerminalWithAnimationTopDown();
         }
       );
