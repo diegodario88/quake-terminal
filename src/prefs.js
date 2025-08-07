@@ -611,7 +611,7 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
       item_type: GenericObjectModel.$gtype,
     });
 
-    ["Left", "Right", "Center"].forEach((hAlign, idx) => {
+    [_("Left"), _("Right"), _("Center")].forEach((hAlign, idx) => {
       // @ts-ignore
       const horizontalAlignment = new GenericObjectModel(hAlign, idx);
       horizontalAlignmentModel.append(horizontalAlignment);
