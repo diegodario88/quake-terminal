@@ -14,7 +14,7 @@ pack: compile
 	@if [ -f "$(PACKED_EXTENSION_FILE)" ]; then \
 	rm -v "$(PACKED_EXTENSION_FILE)"; \
 	fi
-	@gnome-extensions pack --extra-source='quake-mode.js' src
+	@gnome-extensions pack --podir=po --extra-source='quake-mode.js' src
 	@FILE_SIZE_KB=$$($$(which stat) -c%s "$(PACKED_EXTENSION_FILE)" | awk '{printf "%.2f KB", $$1/1024}'); echo "Packed $(NAME): $$FILE_SIZE_KB"
 
 uninstall:
