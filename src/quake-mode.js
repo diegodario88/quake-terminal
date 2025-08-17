@@ -123,7 +123,7 @@ export const QuakeMode = class {
         /**
          * The window actor for this terminal window.
          *
-         * @type {Meta.WindowActor & { ease: Function }}
+         * @type {Meta.WindowActor}
          */
         const actor = w.get_compositor_private();
         return actor.get_name() === "quake-terminal" && w.is_alive;
@@ -159,7 +159,7 @@ export const QuakeMode = class {
     /**
      * The window actor for this terminal window.
      *
-     * @type {Meta.WindowActor & { ease: Function }}
+     * @type {Meta.WindowActor}
      */
     const actor = this.terminalWindow.get_compositor_private();
 
@@ -346,7 +346,7 @@ export const QuakeMode = class {
           /**
            * The window actor for this terminal window.
            *
-           * @type {Meta.WindowActor & { ease: Function }}
+           * @type {Meta.WindowActor}
            */
           const actor = ourWindow.get_compositor_private();
           actor.set_name("quake-terminal");
@@ -517,7 +517,7 @@ export const QuakeMode = class {
 
     this.actor.ease({
       mode: Clutter.AnimationMode.EASE_IN_QUAD,
-      translation_y: 0,
+      translationY: 0,
       duration: this._settings.get_int("animation-time"),
       onComplete: () => {
         this._isTransitioning = false;
@@ -534,7 +534,7 @@ export const QuakeMode = class {
 
     this.actor.ease({
       mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-      translation_y: this.actor.height * -1,
+      translationY: this.actor.height * -1,
       duration: this._settings.get_int("animation-time"),
       onComplete: () => {
         Main.wm.skipNextEffect(this.actor);
@@ -610,7 +610,7 @@ export const QuakeMode = class {
     // @ts-ignore
     Main.wm._shouldAnimateActor = function (
       /**
-       * @type {Meta.WindowActor & { ease: Function }}
+       * @type {Meta.WindowActor}
        */
       actor,
       /** @type {any} */ types
