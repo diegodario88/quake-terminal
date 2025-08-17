@@ -1,33 +1,16 @@
 import js from "@eslint/js";
 import prettier from "eslint-config-prettier";
 import jsdoc from "eslint-plugin-jsdoc";
+import tseslint from "typescript-eslint";
 
-/** @type {import("eslint").Linter.Config[]} */
-export default [
+export default tseslint.config(
   js.configs.recommended,
+  tseslint.configs.base,
   {
-    files: ["**/*.js"],
+    files: ["**/*.ts"],
     languageOptions: {
-      ecmaVersion: 2023,
-      globals: {
-        ARGV: "readonly",
-        Debugger: "readonly",
-        GIRepositoryGType: "readonly",
-        globalThis: "readonly",
-        imports: "readonly",
-        Intl: "readonly",
-        log: "readonly",
-        logError: "readonly",
-        print: "readonly",
-        printerr: "readonly",
-        window: "readonly",
-        TextEncoder: "readonly",
-        TextDecoder: "readonly",
-        console: "readonly",
-        setTimeout: "readonly",
-        setInterval: "readonly",
-        clearTimeout: "readonly",
-        clearInterval: "readonly",
+      parserOptions: {
+        tsconfigRootDir: import.meta.dirname,
       },
     },
     plugins: {
@@ -77,14 +60,13 @@ export default [
       "jsdoc/check-alignment": "error",
       "jsdoc/check-param-names": "error",
       "jsdoc/check-tag-names": "error",
-      "jsdoc/check-types": "error",
       "jsdoc/implements-on-classes": "error",
+      "jsdoc/no-types": "error",
       "jsdoc/tag-lines": ["error", "any", { startLines: 1 }],
       "jsdoc/require-jsdoc": "error",
       "jsdoc/require-param": "error",
       "jsdoc/require-param-description": "error",
       "jsdoc/require-param-name": "error",
-      "jsdoc/require-param-type": "error",
       "key-spacing": ["error", { beforeColon: false, afterColon: true }],
       "keyword-spacing": ["error", { before: true, after: true }],
       "linebreak-style": ["error", "unix"],
@@ -167,10 +149,12 @@ export default [
       "no-template-curly-in-string": "error",
       "no-throw-literal": "error",
       "no-trailing-spaces": "error",
+      "no-undef": "off", // https://typescript-eslint.io/troubleshooting/faqs/eslint/
       "no-undef-init": "error",
       "no-unneeded-ternary": "error",
       "no-unused-expressions": "error",
-      "no-unused-vars": [
+      "no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": [
         "error",
         {
           varsIgnorePattern: "(^unused|_$)",
@@ -226,14 +210,8 @@ export default [
       yoda: "error",
     },
   },
-  {
-    files: ["*.js"],
-    languageOptions: {
-      ecmaVersion: 2025,
-    },
-  },
   prettier,
   {
     ignores: ["node_modules/", "dist/", ".*cache/"],
-  },
-];
+  }
+);

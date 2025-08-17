@@ -1,5 +1,8 @@
 {
   /** Config for GNOME Extensions (GJS) */
+  "extends": [
+    "@tsconfig/node-ts",
+  ],
   "compilerOptions": {
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
@@ -8,9 +11,8 @@
       "ES2022",
       "ES2023.Array",
     ],
-    "checkJs": true,
-    "allowJs": true,
     "skipLibCheck": true,
+    "rewriteRelativeImportExtensions": false,
     "rootDir": "./src",
     "typeRoots": ["./types"],
     // composite build
@@ -18,7 +20,7 @@
     "composite": true,
     "outDir": "./.ts-cache/src",
   },
-  "include": ["src/**/*.js"],
+  "include": ["src/**/*.ts"],
   "references": [
     { "path": "./tsconfig.dev.json" },
   ],

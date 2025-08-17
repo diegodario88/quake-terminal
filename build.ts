@@ -5,17 +5,21 @@ import util from "node:util";
 
 import esbuild from "esbuild";
 import { copy } from "esbuild-plugin-copy";
+import { transform } from "@swc/wasm-typescript";
 
 import metadata from "./metadata.json" with { type: "json" };
 
 /**
  * Execute a command and format output as ESBuild errors.
  *
- * @param {string} program Target executable
- * @param {...string} args Command line arguments
- * @returns {Promise<{ errors: esbuild.PartialMessage[] }>} ESBuild error messages.
+ * @param program Target executable
+ * @param args Command line arguments
+ * @returns ESBuild error messages.
  */
-async function exec(program, ...args) {
+async function exec(
+  program: string,
+  ...args: string[]
+): Promise<{ errors: esbuild.PartialMessage[] }> {
   const execFile = util.promisify(child_process.execFile);
   // throws on exitCode !== 0
   const { stderr, stdout } = await execFile(program, args);
@@ -29,30 +33,28 @@ async function exec(program, ...args) {
 /**
  * Format an error as a ESBuild message.
  *
- * @param {unknown} error Caught exception.
- * @returns {esbuild.PartialMessage} ESBuild error message.
+ * @param error Caught exception.
+ * @returns ESBuild error message.
  */
-function asEsbuildMessage(error) {
+function asEsbuildMessage(error: unknown): esbuild.PartialMessage {
   const message = error instanceof Error ? error.message : `${error}`;
   return { text: message, detail: error };
 }
 
-/**
- * @typedef {object} RunOnEndImplementation
- * @property {string} name Plugin name.
- * @property {(outdir: string) => Promise<esbuild.OnEndResult>} run Plugin body.
- */
+interface RunOnEndImplementation {
+  /** Plugin name. */
+  name: string;
+  /** Plugin body. */
+  run: (outdir: string) => Promise<esbuild.OnEndResult>;
+}
 
 /**
  * Plugin to run a function after build steps are done.
- *
- * @param {RunOnEndImplementation} impl Function to run.
- * @returns {esbuild.Plugin}
  */
-function onEnd({ name, run }) {
+function onEnd({ name, run }: RunOnEndImplementation): esbuild.Plugin {
   return {
     name,
-    setup(build) {
+    setup(build: esbuild.PluginBuild) {
       const outdir =
         build.initialOptions.outdir ??
         path.dirname(build.initialOptions.outfile ?? ".");
@@ -71,21 +73,20 @@ function onEnd({ name, run }) {
 }
 
 /**
- * Plugin to copy JS files without modification.
+ * Simple TypeScript transformation by only stripping types (erasable syntax).
  *
  * Ensures line numbers and columns are preserved in error messages. May be removed after
  * all supported shell versions are able to use source maps (GNOME 48+).
  *
  * @see https://gitlab.gnome.org/GNOME/gjs/-/merge_requests/938
  *
- * @param {string} directory Root path of JS files that won't be transformed.
- * @returns {esbuild.Plugin}
+ * @param directory Root path of TS files that will be stripped only.
  */
-function noTransformJs(directory) {
+function stripTsTypes(directory: string): esbuild.Plugin {
   return {
-    name: "no-transform-js",
-    setup(build) {
-      build.onResolve({ filter: /\.js$/, namespace: "file" }, async (args) => {
+    name: "strip-ts-types",
+    setup(build: esbuild.PluginBuild) {
+      build.onResolve({ filter: /\.ts$/, namespace: "file" }, async (args) => {
         const result = await build.resolve(args.path, {
           // namespace: undefined,
           importer: args.importer,
@@ -102,16 +103,26 @@ function noTransformJs(directory) {
 
         return {
           ...result,
-          namespace: "no-transform",
+          path: args.path.replace(/\.ts$/, ".js"),
+          namespace: "strip-types",
         };
       });
 
       build.onLoad(
-        { filter: /\.js$/, namespace: "no-transform" },
+        { filter: /\.js$/, namespace: "strip-types" },
         async (args) => {
-          const code = await fs.readFile(args.path, { encoding: null });
+          const path = args.path.replace(/\.js$/, ".ts");
+          const code = await fs.readFile(path, { encoding: null });
+          const result = await transform(code, {
+            filename: args.path,
+            module: true,
+            sourceMap: false,
+            deprecatedTsModuleAsError: true,
+            mode: "strip-only",
+          });
+
           return {
-            contents: code,
+            contents: result.code,
             loader: "copy",
           };
         }
@@ -121,7 +132,7 @@ function noTransformJs(directory) {
 }
 
 await esbuild.build({
-  entryPoints: ["./src/extension.js", "./src/quake-mode.js", "./src/prefs.js"],
+  entryPoints: ["./src/extension.ts", "./src/quake-mode.ts", "./src/prefs.ts"],
   outdir: "./dist",
   // https://gitlab.gnome.org/GNOME/gjs/-/blob/master/NEWS
   target: "firefox115", // GNOME 45 - GJS 1.78
@@ -136,7 +147,7 @@ await esbuild.build({
         { from: "./po/**/*", to: "po" },
       ],
     }),
-    noTransformJs("./src"),
+    stripTsTypes("./src"),
     onEnd({
       name: "compile-gschemas",
       run: (outdir) =>

@@ -12,32 +12,35 @@
   },
   "engines": {
     "gjs": ">=1.78",
-    "node": ">=22"
+    "node": ">=24"
   },
   "homepage": "https://github.com/diegodario88/quake-terminal#readme",
   "sideEffects": false,
   "devDependencies": {
     "@girs/gnome-shell": "^48.0.4",
-    "@tsconfig/node22": "^22.0.2",
+    "@swc/wasm-typescript": "^1.13.5",
+    "@tsconfig/node-ts": "^23.6.1",
+    "@tsconfig/node24": "^24.0.1",
     "@tsconfig/strictest": "^2.0.5",
-    "@types/node": "^22.13.14",
+    "@types/node": "^24.3.0",
     "esbuild": "^0.25.9",
     "esbuild-plugin-copy": "^2.1.1",
     "eslint": "^9.34.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-jsdoc": "^54.1.1",
     "prettier": "^3.6.2",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.41.0"
   },
   "config": {
     "uuid": "quake-terminal@diegodario88.github.io"
   },
   "scripts": {
     "clean": "rm -rf ./.*cache ./dist ./*.shell-extension.zip",
-    "lint": "eslint --cache",
+    "lint": "eslint --cache --flag unstable_native_nodejs_ts_config",
     "check": "tsc --build",
     "format": "prettier --write **/*.{js,ts}",
-    "build": "node ./build.js",
+    "build": "node ./build.ts",
     "extension:install": "npm run build && gnome-extensions install -f ./${npm_package_config_uuid}.shell-extension.zip",
     "extension:uninstall": "gnome-extensions uninstall ${npm_package_config_uuid}"
   }

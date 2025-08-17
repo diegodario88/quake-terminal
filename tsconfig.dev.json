@@ -1,7 +1,8 @@
 {
   /** Config for dev tools (NodeJS) */
   "extends": [
-    "@tsconfig/node22",
+    "@tsconfig/node-ts",
+    "@tsconfig/node24",
     "@tsconfig/strictest",
   ],
   "compilerOptions": {
@@ -11,5 +12,5 @@
     "composite": true,
     "outDir": "./.ts-cache",
   },
-  "include": ["*.js", "*.json"],
+  "include": ["*.ts", "*.json"],
 }
