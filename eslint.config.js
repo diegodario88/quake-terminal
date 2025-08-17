@@ -2,6 +2,7 @@ import js from "@eslint/js";
 import prettier from "eslint-config-prettier";
 import jsdoc from "eslint-plugin-jsdoc";
 
+/** @type {import("eslint").Linter.Config[]} */
 export default [
   js.configs.recommended,
   {
@@ -227,6 +228,6 @@ export default [
   },
   prettier,
   {
-    ignores: ["eslint.config.js", "dist/**/*", "node_modules/**"],
+    ignores: ["node_modules/", "dist/", "./build.js"],
   },
 ];

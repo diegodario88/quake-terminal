@@ -1,12 +1,12 @@
 {
   "compilerOptions": {
+    "noEmit": true,
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "outDir": "./dist",
     "sourceMap": false,
     "target": "ES2022",
     "checkJs": true,
-    "allowJs": true
+    "allowJs": true,
     "lib": [
       "ES2022"
     ],
