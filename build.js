@@ -87,7 +87,7 @@ function noTransformJs(directory) {
     setup(build) {
       build.onResolve({ filter: /\.js$/, namespace: "file" }, async (args) => {
         const result = await build.resolve(args.path, {
-          namespace: undefined,
+          // namespace: undefined,
           importer: args.importer,
           resolveDir: args.resolveDir,
           kind: args.kind,
@@ -123,6 +123,8 @@ function noTransformJs(directory) {
 await esbuild.build({
   entryPoints: ["./src/extension.js", "./src/quake-mode.js", "./src/prefs.js"],
   outdir: "./dist",
+  // https://gitlab.gnome.org/GNOME/gjs/-/blob/master/NEWS
+  target: "firefox115", // GNOME 45 - GJS 1.78
   platform: "neutral",
   plugins: [
     copy({

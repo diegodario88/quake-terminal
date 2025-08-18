@@ -8,7 +8,7 @@ export default [
   {
     files: ["**/*.js"],
     languageOptions: {
-      ecmaVersion: 2022,
+      ecmaVersion: 2023,
       globals: {
         ARGV: "readonly",
         Debugger: "readonly",
@@ -226,8 +226,14 @@ export default [
       yoda: "error",
     },
   },
+  {
+    files: ["*.js"],
+    languageOptions: {
+      ecmaVersion: 2025,
+    },
+  },
   prettier,
   {
-    ignores: ["node_modules/", "dist/", "./build.js"],
+    ignores: ["node_modules/", "dist/", ".*cache/"],
   },
 ];

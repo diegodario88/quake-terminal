@@ -11,25 +11,32 @@
     "url": "https://github.com/diegodario88/quake-terminal/issues"
   },
   "engines": {
+    "gjs": ">=1.78",
     "node": ">=22"
   },
   "homepage": "https://github.com/diegodario88/quake-terminal#readme",
   "sideEffects": false,
   "devDependencies": {
-    "@girs/gnome-shell": "^48.0.2",
+    "@girs/gnome-shell": "^48.0.4",
+    "@tsconfig/node22": "^22.0.2",
+    "@tsconfig/strictest": "^2.0.5",
     "@types/node": "^22.13.14",
     "esbuild": "^0.25.9",
     "esbuild-plugin-copy": "^2.1.1",
-    "eslint": "^9.27.0",
-    "eslint-config-prettier": "^10.1.5",
-    "eslint-plugin-jsdoc": "^50.6.17",
-    "prettier": "^3.6.2"
+    "eslint": "^9.34.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-jsdoc": "^54.1.1",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.2"
   },
   "config": {
     "uuid": "quake-terminal@diegodario88.github.io"
   },
   "scripts": {
-    "clean": "rm -rf ./dist ./*.shell-extension.zip",
+    "clean": "rm -rf ./.*cache ./dist ./*.shell-extension.zip",
+    "lint": "eslint --cache",
+    "check": "tsc --build",
+    "format": "prettier --write **/*.{js,ts}",
     "build": "node ./build.js",
     "extension:install": "npm run build && gnome-extensions install -f ./${npm_package_config_uuid}.shell-extension.zip",
     "extension:uninstall": "gnome-extensions uninstall ${npm_package_config_uuid}"
