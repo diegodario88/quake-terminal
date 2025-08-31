@@ -1,0 +1,16 @@
+{
+  /** Config for dev tools (NodeJS) */
+  "extends": [
+    "@tsconfig/node-ts",
+    "@tsconfig/node24",
+    "@tsconfig/strictest",
+  ],
+  "compilerOptions": {
+    "rootDir": ".",
+    // composite build
+    "incremental": true,
+    "composite": true,
+    "outDir": "./.ts-cache",
+  },
+  "include": ["*.ts", "*.json"],
+}

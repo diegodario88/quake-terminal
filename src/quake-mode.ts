@@ -15,22 +15,46 @@ const STARTUP_TIMER_IN_SECONDS = 5;
  *
  * @module QuakeMode
  */
-export const QuakeMode = class {
+export class QuakeMode {
   static LIFECYCLE = {
     READY: "READY",
     STARTING: "STARTING",
     CREATED_ACTOR: "CREATED_ACTOR",
     RUNNING: "RUNNING",
     DEAD: "DEAD",
-  };
+  } as const;
+
+  _terminal: Shell.App | null = null;
+  _settings: Gio.Settings | null = null;
+  _internalState: keyof typeof QuakeMode.LIFECYCLE = QuakeMode.LIFECYCLE.READY;
+
+  _sourceTimeoutLoopId: number | null = null;
+  _terminalWindowUnmanagedId: number | null = null;
+  _terminalWindowFocusId: number | null = null;
+  _wmMapSignalId: number | null = null;
+  _terminalChangedId: number | null = null;
+  _actorStageViewChangedId: number | null = null;
+
+  _terminalWindow: Meta.Window | null = null;
+  _isTaskbarConfigured: boolean | null = null;
+  _isTransitioning: false;
+  /**
+   * Stores the IDs of settings signal handlers.
+   */
+  _settingsWatchingListIds: number[] = [];
+
+  _original_shouldAnimateActor: (
+    actor: Meta.WindowActor,
+    types: Meta.WindowType[]
+  ) => boolean;
 
   /**
    * Creates a new QuakeMode instance.
    *
-   * @param {Shell.App} terminal - The terminal application instance.
-   * @param {Gio.Settings} settings - The Gio.Settings object for configuration.
+   * @param terminal - The terminal application instance.
+   * @param settings - The Gio.Settings object for configuration.
    */
-  constructor(terminal, settings) {
+  constructor(terminal: Shell.App, settings: Gio.Settings) {
     console.log(
       `*** QuakeTerminal@constructor - IsWayland = ${Meta.is_wayland_compositor()} ***`
     );
@@ -38,25 +62,9 @@ export const QuakeMode = class {
       `*** QuakeTerminal@constructor - Terminal App = ${terminal.get_name()} ***`
     );
 
-    /**
-     *@type {Shell.App}
-     */
     this._terminal = terminal;
     this._settings = settings;
     this._internalState = QuakeMode.LIFECYCLE.READY;
-
-    this._sourceTimeoutLoopId = null;
-    this._terminalWindowUnmanagedId = null;
-    this._terminalWindowFocusId = null;
-    this._wmMapSignalId = null;
-    this._terminalChangedId = null;
-    this._actorStageViewChangedId = null;
-
-    /**
-     *@type {Meta.Window}
-     */
-    this._terminalWindow = null;
-    this._isTaskbarConfigured = null;
 
     /** We will monkey-patch this method. Let's store the original one. */
     // @ts-ignore
@@ -64,13 +72,6 @@ export const QuakeMode = class {
 
     // Enhance the close animation behavior when exiting
     this._configureActorCloseAnimation();
-
-    /**
-     * Stores the IDs of settings signal handlers.
-     *
-     * @type {number[]}
-     */
-    this._settingsWatchingListIds = [];
 
     ["vertical-size", "horizontal-size", "horizontal-alignment"].forEach(
       (prefAdjustment) => {
@@ -122,10 +123,8 @@ export const QuakeMode = class {
       let ourWindow = this._terminal.get_windows().find((w) => {
         /**
          * The window actor for this terminal window.
-         *
-         * @type {Meta.WindowActor & { ease: Function }}
          */
-        const actor = w.get_compositor_private();
+        const actor = w.get_compositor_private<Meta.WindowActor>();
         return actor.get_name() === "quake-terminal" && w.is_alive;
       });
 
@@ -158,10 +157,9 @@ export const QuakeMode = class {
 
     /**
      * The window actor for this terminal window.
-     *
-     * @type {Meta.WindowActor & { ease: Function }}
      */
-    const actor = this.terminalWindow.get_compositor_private();
+    const actor =
+      this.terminalWindow.get_compositor_private<Meta.WindowActor>();
 
     if (!actor) {
       console.log(`*** QuakeTerminal@actor - There's no actor ***`);
@@ -258,9 +256,9 @@ export const QuakeMode = class {
   /**
    * Toggles the visibility of the terminal window with animations.
    *
-   * @returns {Promise<void>} A promise that resolves when the toggle operation is complete.
+   * @returns A promise that resolves when the toggle operation is complete.
    */
-  async toggle() {
+  async toggle(): Promise<void> {
     if (!this.terminalWindow) {
       try {
         await this._launchTerminalWindow();
@@ -292,9 +290,9 @@ export const QuakeMode = class {
   /**
    * Launches the terminal window and sets up event handlers.
    *
-   * @returns {Promise<boolean>} A promise that resolves when the terminal window is ready.
+   * @returns A promise that resolves when the terminal window is ready.
    */
-  _launchTerminalWindow() {
+  _launchTerminalWindow(): Promise<boolean> {
     this._internalState = QuakeMode.LIFECYCLE.STARTING;
 
     if (!this._terminal) {
@@ -311,7 +309,7 @@ export const QuakeMode = class {
     const launchArgs = launchArgsMap[info.get_id()] || "";
     const cancellable = new Gio.Cancellable();
 
-    const promiseTerminalWindowInLessThanFiveSeconds = new Promise(
+    const promiseTerminalWindowInLessThanFiveSeconds = new Promise<true>(
       (resolve, reject) => {
         const shellAppWindowsChangedHandler = () => {
           GLib.Source.remove(this._sourceTimeoutLoopId);
@@ -345,10 +343,8 @@ export const QuakeMode = class {
           const ourWindow = this._terminal.get_windows()[0];
           /**
            * The window actor for this terminal window.
-           *
-           * @type {Meta.WindowActor & { ease: Function }}
            */
-          const actor = ourWindow.get_compositor_private();
+          const actor = ourWindow.get_compositor_private<Meta.WindowActor>();
           actor.set_name("quake-terminal");
           this._terminalWindow = ourWindow;
           this._internalState = QuakeMode.LIFECYCLE.CREATED_ACTOR;
@@ -425,7 +421,6 @@ export const QuakeMode = class {
       return;
     }
 
-    // @ts-ignore
     // Avoid set_clip here — it relies on stage-views-changed to remove the clip later,
     // but that signal is not reliably fired in some GNOME Shell environments (e.g. fast-starting terminals like kitty).
     // Instead, we use set_size(0, 0) to safely initialize without rendering, and let the animation logic handle the rest.
@@ -434,8 +429,8 @@ export const QuakeMode = class {
     this.terminalWindow.stick();
 
     const mapSignalHandler = (
-      /** @type {Shell.WM} */ wm,
-      /** @type {Meta.WindowActor} */ metaWindowActor
+      wm: Shell.WM,
+      metaWindowActor: Meta.WindowActor
     ) => {
       if (metaWindowActor !== this.actor) {
         console.log(
@@ -517,7 +512,7 @@ export const QuakeMode = class {
 
     this.actor.ease({
       mode: Clutter.AnimationMode.EASE_IN_QUAD,
-      translation_y: 0,
+      translationY: 0,
       duration: this._settings.get_int("animation-time"),
       onComplete: () => {
         this._isTransitioning = false;
@@ -534,7 +529,7 @@ export const QuakeMode = class {
 
     this.actor.ease({
       mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-      translation_y: this.actor.height * -1,
+      translationY: this.actor.height * -1,
       duration: this._settings.get_int("animation-time"),
       onComplete: () => {
         Main.wm.skipNextEffect(this.actor);
@@ -609,11 +604,8 @@ export const QuakeMode = class {
 
     // @ts-ignore
     Main.wm._shouldAnimateActor = function (
-      /**
-       * @type {Meta.WindowActor & { ease: Function }}
-       */
-      actor,
-      /** @type {any} */ types
+      actor: Meta.WindowActor,
+      types: Meta.WindowType[]
     ) {
       const stack = new Error().stack;
       const forClosing = stack.includes("_destroyWindow@");
@@ -691,11 +683,14 @@ export const QuakeMode = class {
    *
    * If given, @cancellable can be used to stop the process before it finishes.
    *
-   * @param {string[]} argv - a list of string arguments
-   * @param {Gio.Cancellable} [cancellable] - optional cancellable object
-   * @returns {Promise<void>} - The process success
+   * @param argv - a list of string arguments
+   * @param cancellable - optional cancellable object
+   * @returns The process success
    */
-  async _spawn(argv, cancellable = null) {
+  async _spawn(
+    argv: string[],
+    cancellable: Gio.Cancellable | null = null
+  ): Promise<void> {
     let cancelId = 0;
     const proc = new Gio.Subprocess({
       argv,
@@ -721,4 +716,4 @@ export const QuakeMode = class {
       if (cancelId > 0) cancellable.disconnect(cancelId);
     }
   }
-};
+}

@@ -1,3 +1,6 @@
 *.zip
 node_modules
 dist
+.*cache
+*.tsbuildinfo
+*.js

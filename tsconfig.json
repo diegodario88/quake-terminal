@@ -1,15 +1,27 @@
 {
+  /** Config for GNOME Extensions (GJS) */
+  "extends": [
+    "@tsconfig/node-ts",
+  ],
   "compilerOptions": {
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "outDir": "./dist",
-    "sourceMap": false,
-    "target": "ES2022",
-    "checkJs": true,
-    "allowJs": true
+    "target": "ES2023",
     "lib": [
-      "ES2022"
+      "ES2022",
+      "ES2023.Array",
     ],
+    "skipLibCheck": true,
+    "rewriteRelativeImportExtensions": false,
+    "rootDir": "./src",
+    "typeRoots": ["./types"],
+    // composite build
+    "incremental": true,
+    "composite": true,
+    "outDir": "./.ts-cache/src",
   },
-  "include": ["@types/gnome-shell/ambient.d.ts", "**/*.js"]
+  "include": ["src/**/*.ts"],
+  "references": [
+    { "path": "./tsconfig.dev.json" },
+  ],
 }
