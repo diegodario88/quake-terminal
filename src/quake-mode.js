@@ -8,6 +8,37 @@ import * as Main from "resource:///org/gnome/shell/ui/main.js";
 const STARTUP_TIMER_IN_SECONDS = 5;
 
 /**
+ * Checks if the given window is a wl-clipboard window (wl-copy or wl-paste) running under Wayland.
+ *
+ * This function verifies the window's client type, title, and command line to determine
+ * if it is a wl-clipboard instance. Used to avoid interfering with clipboard popups.
+ *
+ * @param {Meta.Window} win - The window to check.
+ * @returns {boolean} True if the window is a wl-clipboard window, false otherwise.
+ */
+export function is_wlclipboard(win) {
+  if (!win)
+    return false;
+
+  if (win.get_client_type() !== Meta.WindowClientType.WAYLAND)
+    return false;
+
+  if (win.title !== 'wl-clipboard')
+    return false;
+
+  const pid = win.get_pid();
+
+  try {
+    const [, bytes] = GLib.file_get_contents(`/proc/${pid}/cmdline`);
+    const argv0_bytes = bytes.slice(0, bytes.indexOf(0));
+    const argv0 = new TextDecoder().decode(argv0_bytes);
+    return ['wl-copy', 'wl-paste'].includes(GLib.path_get_basename(argv0));
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Quake Mode Module
  *
  * This module provides a Quake mode for managing a terminal window with animations and specific behavior.
@@ -664,6 +695,10 @@ export const QuakeMode = class {
       return;
     }
 
+    if (is_wlclipboard(focusedWindow)) {
+      return;
+    }
+
     if (focusedWindow === this.terminalWindow) {
       return;
     }
@@ -674,11 +709,21 @@ export const QuakeMode = class {
   _handleAlwaysOnTop() {
     const shouldAlwaysOnTop = this._settings.get_boolean("always-on-top");
 
-    if (!shouldAlwaysOnTop && !this.terminalWindow.is_above()) {
+    if (!shouldAlwaysOnTop) {
       return;
     }
 
-    if (!shouldAlwaysOnTop && this.terminalWindow.is_above()) {
+    const focusedWindow = Shell.Global.get().display.focus_window;
+
+    if (focusedWindow && is_wlclipboard(focusedWindow)) {
+      return;
+    }
+
+    if (!this.terminalWindow.is_above()) {
+      return;
+    }
+
+    if (this.terminalWindow.is_above()) {
       this.terminalWindow.unmake_above();
       return;
     }
