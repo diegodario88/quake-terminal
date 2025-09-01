@@ -709,21 +709,11 @@ export const QuakeMode = class {
   _handleAlwaysOnTop() {
     const shouldAlwaysOnTop = this._settings.get_boolean("always-on-top");
 
-    if (!shouldAlwaysOnTop) {
+    if (!shouldAlwaysOnTop && !this.terminalWindow.is_above()) {
       return;
     }
 
-    const focusedWindow = Shell.Global.get().display.focus_window;
-
-    if (focusedWindow && is_wlclipboard(focusedWindow)) {
-      return;
-    }
-
-    if (!this.terminalWindow.is_above()) {
-      return;
-    }
-
-    if (this.terminalWindow.is_above()) {
+    if (!shouldAlwaysOnTop && this.terminalWindow.is_above()) {
       this.terminalWindow.unmake_above();
       return;
     }
