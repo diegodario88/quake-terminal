@@ -21,7 +21,11 @@ const ABOUT_TERMINAL_APPLICATION_HELP_DIALOG = `
 </markup>
 `;
 
-const getConnectedMonitorsList = (): Gdk.Monitor[] => {
+/**
+ *
+ * @returns GdkMonitor[]
+ */
+const getConnectedMonitorsList = () => {
   const monitors = [];
 
   const display = Gdk.Display.get_default(); // Gets the default GdkDisplay
@@ -39,7 +43,10 @@ const getConnectedMonitorsList = (): Gdk.Monitor[] => {
   return monitors;
 };
 
-const isValidAccel = (mask: number | Gdk.ModifierType, keyval: number) => {
+const isValidAccel = (
+  /** @type {number | Gdk.ModifierType} */ mask,
+  /** @type {number} */ keyval
+) => {
   return (
     Gtk.accelerator_valid(keyval, mask) ||
     (keyval === Gdk.KEY_Tab && mask !== 0)
@@ -47,9 +54,9 @@ const isValidAccel = (mask: number | Gdk.ModifierType, keyval: number) => {
 };
 
 /**
- * @param app - Selected terminal application
+ * @param {Gio.DesktopAppInfo} app - Selected terminal application
  */
-function getAppIconImage(app: Gio.DesktopAppInfo) {
+function getAppIconImage(app) {
   const appIconString = app?.get_icon()?.to_string() ?? "icon-missing";
 
   return new Gtk.Image({
@@ -81,10 +88,10 @@ const GenericObjectModel = GObject.registerClass(
   },
   class GenericObjectModel extends GObject.Object {
     /**
-     * @param name - Object name
-     * @param value - Object value
+     * @param {string} name - Object name
+     * @param {number} value - Object value
      */
-    override _init(name: string, value: number) {
+    _init(name, value) {
       super._init({ name, value });
     }
   }
@@ -99,13 +106,11 @@ const AppChooserDialog = GObject.registerClass(
     Signals: { "app-selected": { param_types: [GObject.TYPE_STRING] } },
   },
   class AppChooserDialog extends Adw.PreferencesWindow {
-    _group: Adw.PreferencesGroup;
-
     /**
-     * @param apps list of apps to display in dialog
-     * @param parent parent window, dialog will be transient for parent
+     * @param {Gio.DesktopAppInfo[]} apps list of apps to display in dialog
+     * @param {{ defaultWidth: number; defaultHeight: number; }} parent parent window, dialog will be transient for parent
      */
-    override _init(apps: Gio.DesktopAppInfo[], parent: Adw.PreferencesWindow) {
+    _init(apps, parent) {
       super._init({
         modal: true,
         transientFor: parent,
@@ -125,9 +130,9 @@ const AppChooserDialog = GObject.registerClass(
     }
 
     /**
-     * @param app - The terminal application
+     * @param {Gio.DesktopAppInfo} app - The terminal application
      */
-    _addAppRow(app: Gio.DesktopAppInfo) {
+    _addAppRow(app) {
       const row = new Adw.ActionRow({
         title: app.get_display_name(),
         subtitle: app.get_description(),
@@ -149,9 +154,10 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
   /**
    * Fills the preferences window with extension settings UI.
    *
-   * @param window - The preferences window to populate.
+   * @param {Adw.PreferencesWindow} window - The preferences window to populate.
+   * @returns {Promise<void>}
    */
-  override fillPreferencesWindow(window: Adw.PreferencesWindow): Promise<void> {
+  fillPreferencesWindow(window) {
     const settings = this.getSettings();
 
     const page = new Adw.PreferencesPage();
@@ -168,7 +174,7 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
     const terminalApplicationId = settings.get_string("terminal-id");
 
     const defaultTerminalApplicationId = settings
-      .get_default_value<"s">("terminal-id")
+      .get_default_value("terminal-id")
       .deep_unpack();
 
     const applicationIDRow = new Adw.ActionRow({
@@ -254,7 +260,7 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
 
     // Custom terminal arguments per application
     const launchArgsMap =
-      settings.get_value<"a{ss}">("launch-args-map").deep_unpack() || {};
+      settings.get_value("launch-args-map").deep_unpack() || {};
     const currentAppArgs = launchArgsMap[terminalApplicationId] || "";
 
     const launchArgRow = new Adw.EntryRow({
@@ -269,7 +275,7 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
     launchArgRow.connect("apply", () => {
       const applyTerminalApplicationId = settings.get_string("terminal-id");
       const applyLaunchArgsMap =
-        settings.get_value<"a{ss}">("launch-args-map").deep_unpack() || {};
+        settings.get_value("launch-args-map").deep_unpack() || {};
 
       const updatedMap = { ...applyLaunchArgsMap };
       updatedMap[applyTerminalApplicationId] = launchArgRow.text;
@@ -322,7 +328,7 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
         gtkIcon.set_from_gicon(Gio.icon_new_for_string(appIconString));
 
         const settingsArgsMap =
-          settings.get_value<"a{ss}">("launch-args-map").deep_unpack() || {};
+          settings.get_value("launch-args-map").deep_unpack() || {};
 
         const currentSelectedAppArgs = settingsArgsMap[appId] || "";
         launchArgRow.text = currentSelectedAppArgs;
@@ -478,6 +484,7 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
       const monitorScreen = new GenericObjectModel(
         // @ts-ignore
         `${monitor.description}`.toUpperCase(),
+        // @ts-ignore
         idx
       );
       monitorScreenModel.append(monitorScreen);

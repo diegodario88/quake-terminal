@@ -53,7 +53,7 @@ git clone https://github.com/diegodario88/quake-terminal.git
 2. Run the provided installation script:
 
 ```bash
-npm run extension:install
+make install
 ```
 
 ## Contributing
@@ -69,7 +69,7 @@ npm install
 ```
 
 ```bash
-npm run extension:install
+make install
 ```
 
 4. Make your changes to the code

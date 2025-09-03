@@ -18,7 +18,6 @@
  * If this extension breaks your desktop you get to keep all of the pieces...
  */
 
-import type Gio from "gi://Gio";
 import Meta from "gi://Meta";
 import Shell from "gi://Shell";
 import {
@@ -29,11 +28,7 @@ import * as Main from "resource:///org/gnome/shell/ui/main.js";
 import { QuakeMode } from "./quake-mode.js";
 
 export default class QuakeTerminalExtension extends Extension {
-  _settings: Gio.Settings;
-  _appSystem: Shell.AppSystem;
-  _quakeMode: QuakeMode | null;
-
-  override enable() {
+  enable() {
     this._settings = this.getSettings();
     this._appSystem = Shell.AppSystem.get_default();
     this._quakeMode = null;
@@ -50,7 +45,7 @@ export default class QuakeTerminalExtension extends Extension {
     );
   }
 
-  override disable() {
+  disable() {
     Main.wm.removeKeybinding("terminal-shortcut");
 
     if (this._quakeMode) {
