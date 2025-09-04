@@ -425,12 +425,6 @@ export const QuakeMode = class {
       return;
     }
 
-    // @ts-ignore
-    // Avoid set_clip here — it relies on stage-views-changed to remove the clip later,
-    // but that signal is not reliably fired in some GNOME Shell environments (e.g. fast-starting terminals like kitty).
-    // Instead, we use set_size(0, 0) to safely initialize without rendering, and let the animation logic handle the rest.
-    this.actor.set_position(0, 0);
-    this.actor.set_size(0, 0);
     this.terminalWindow.stick();
 
     const mapSignalHandler = (
@@ -443,6 +437,7 @@ export const QuakeMode = class {
         );
         return;
       }
+      this.actor.opacity = 0;
 
       // This code should run exclusively during the initial creation of the terminal application
       // to ensure an immediate disconnection, we turn off the signal.
@@ -518,13 +513,12 @@ export const QuakeMode = class {
     this.actor.ease({
       mode: Clutter.AnimationMode.EASE_IN_QUAD,
       translation_y: 0,
+      opacity: 255,
       duration: this._settings.get_int("animation-time"),
       onComplete: () => {
         this._isTransitioning = false;
       },
     });
-
-    this._fitTerminalToMainMonitor();
   }
 
   _hideTerminalWithAnimationBottomUp() {
