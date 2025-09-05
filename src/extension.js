@@ -58,6 +58,15 @@ export default class QuakeTerminalExtension extends Extension {
   }
 
   _handleQuakeModeTerminal() {
+    if (this._quakeMode) {
+      if (
+        this._quakeMode._internalState === QuakeMode.LIFECYCLE.STARTING ||
+        this._quakeMode._internalState === QuakeMode.LIFECYCLE.CREATED_ACTOR
+      ) {
+        return;
+      }
+    }
+
     if (
       !this._quakeMode ||
       this._quakeMode._internalState === QuakeMode.LIFECYCLE.DEAD
