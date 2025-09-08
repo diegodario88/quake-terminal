@@ -399,8 +399,8 @@ export const QuakeMode = class {
 
           this._terminalWindowFocusId = Shell.Global.get().display.connect(
             "notify::focus-window",
-            () => {
-              this._handleHideOnFocusLoss();
+            (source) => {
+              this._handleHideOnFocusLoss(source);
             }
           );
           resolve(true);
@@ -456,12 +456,6 @@ export const QuakeMode = class {
       return;
     }
 
-    // @ts-ignore
-    // Avoid set_clip here — it relies on stage-views-changed to remove the clip later,
-    // but that signal is not reliably fired in some GNOME Shell environments (e.g. fast-starting terminals like kitty).
-    // Instead, we use set_size(0, 0) to safely initialize without rendering, and let the animation logic handle the rest.
-    this.actor.set_position(0, 0);
-    this.actor.set_size(0, 0);
     this.terminalWindow.stick();
 
     const mapSignalHandler = (
@@ -474,6 +468,7 @@ export const QuakeMode = class {
         );
         return;
       }
+      this.actor.opacity = 0;
 
       // This code should run exclusively during the initial creation of the terminal application
       // to ensure an immediate disconnection, we turn off the signal.
@@ -549,13 +544,12 @@ export const QuakeMode = class {
     this.actor.ease({
       mode: Clutter.AnimationMode.EASE_IN_QUAD,
       translation_y: 0,
+      opacity: 255,
       duration: this._settings.get_int("animation-time"),
       onComplete: () => {
         this._isTransitioning = false;
       },
     });
-
-    this._fitTerminalToMainMonitor();
   }
 
   _hideTerminalWithAnimationBottomUp() {
@@ -682,24 +676,27 @@ export const QuakeMode = class {
     };
   }
 
-  _handleHideOnFocusLoss() {
+  /**
+   * Hides the terminal when it loses focus.
+   *
+   * @param {Meta.Display} source - The display object.
+   */
+  _handleHideOnFocusLoss(source) {
     const shouldAutoHide = this._settings.get_boolean("auto-hide-window");
 
     if (!shouldAutoHide) {
       return;
     }
 
-    const focusedWindow = Shell.Global.get().display.focus_window;
-
-    if (!focusedWindow) {
+    if (!source) {
       return;
     }
 
-    if (is_wlclipboard(focusedWindow)) {
+    if (is_wlclipboard(source.focus_window)) {
       return;
     }
 
-    if (focusedWindow === this.terminalWindow) {
+    if (source.focus_window === this.terminalWindow) {
       return;
     }
 
