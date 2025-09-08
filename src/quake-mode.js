@@ -368,8 +368,8 @@ export const QuakeMode = class {
 
           this._terminalWindowFocusId = Shell.Global.get().display.connect(
             "notify::focus-window",
-            () => {
-              this._handleHideOnFocusLoss();
+            (source) => {
+              this._handleHideOnFocusLoss(source);
             }
           );
           resolve(true);
@@ -645,20 +645,23 @@ export const QuakeMode = class {
     };
   }
 
-  _handleHideOnFocusLoss() {
+  /**
+   * Hides the terminal when it loses focus.
+   *
+   * @param {Meta.Display} source - The display object.
+   */
+  _handleHideOnFocusLoss(source) {
     const shouldAutoHide = this._settings.get_boolean("auto-hide-window");
 
     if (!shouldAutoHide) {
       return;
     }
 
-    const focusedWindow = Shell.Global.get().display.focus_window;
-
-    if (!focusedWindow) {
+    if (!source) {
       return;
     }
 
-    if (focusedWindow === this.terminalWindow) {
+    if (source.focus_window === this.terminalWindow) {
       return;
     }
 
