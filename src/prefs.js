@@ -9,6 +9,11 @@ import {
   gettext as _,
 } from "resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js";
 
+// Use GioUnix on GNOME 49+, but fallback to plain Gio for older versions
+const GioUnix = await import("gi://GioUnix")
+  .then((module) => module.default)
+  .catch(() => Gio);
+
 const ABOUT_TERMINAL_APPLICATION_HELP_DIALOG = `
 <markup>
   <span font_desc='11'>When this row is activated, the system searches for installed apps based on specific criteria that each app must meet:</span>
@@ -181,7 +186,7 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
       title: _("Terminal Application"),
     });
 
-    let selectedTerminalEmulator = Gio.DesktopAppInfo.new(
+    let selectedTerminalEmulator = GioUnix.DesktopAppInfo.new(
       terminalApplicationId
     );
 
@@ -190,7 +195,7 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
         `Unable to locate a terminal application with the specified ID (${terminalApplicationId}). Falling back to the default terminal (${defaultTerminalApplicationId}).`
       );
 
-      selectedTerminalEmulator = Gio.DesktopAppInfo.new(
+      selectedTerminalEmulator = GioUnix.DesktopAppInfo.new(
         defaultTerminalApplicationId
       );
     }
@@ -318,7 +323,7 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
       appChooserDialog.connect("app-selected", (_source, appId) => {
         settings.set_string("terminal-id", appId);
 
-        const newSelectedTerminalEmulator = Gio.DesktopAppInfo.new(appId);
+        const newSelectedTerminalEmulator = GioUnix.DesktopAppInfo.new(appId);
         applicationIDRow.set_subtitle(newSelectedTerminalEmulator.get_id());
 
         const appIconString =
