@@ -227,6 +227,11 @@ export default [
   },
   prettier,
   {
-    ignores: ["eslint.config.js", "dist/**/*", "node_modules/**"],
+    ignores: [
+      "eslint.config.js",
+      "dist/**/*",
+      "node_modules/**",
+      "scripts/**/*",
+    ],
   },
 ];

@@ -1,5 +1,5 @@
 {
-  "name": "Quake Terminal",
+  "name": "quake-terminal",
   "description": "Quickly launch a terminal in Quake mode using a keyboard shortcut",
   "version": "1.6.9",
   "private": true,
@@ -20,9 +20,13 @@
   "sideEffects": false,
   "devDependencies": {
     "@girs/gnome-shell": "^48.0.2",
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/exec": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
     "eslint": "^9.27.0",
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-jsdoc": "^50.6.17",
-    "prettier": "^3.5.3"
+    "prettier": "^3.5.3",
+    "semantic-release": "^24.2.0"
   }
 }

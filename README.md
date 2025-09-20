@@ -79,6 +79,42 @@ make install
 dbus-run-session -- gnome-shell --nested --wayland
 ```
 
+### Release Process
+
+This project uses [semantic-release](https://semantic-release.gitbook.io/) for automated versioning and releases. The release process is triggered automatically when commits are pushed to the `main` branch.
+
+#### Commit Message Format
+
+Use [conventional commits](https://www.conventionalcommits.org/) format for your commit messages:
+
+- `feat:` - A new feature (triggers a minor release)
+- `fix:` - A bug fix (triggers a patch release)
+- `docs:` - Documentation changes
+- `style:` - Code style changes (formatting, etc.)
+- `refactor:` - Code refactoring
+- `test:` - Adding or updating tests
+- `chore:` - Build process or auxiliary tool changes
+
+Example:
+
+```
+feat: add support for custom terminal arguments
+fix: resolve animation timing issue
+docs: update installation instructions
+```
+
+#### What Happens on Release
+
+When you push to `main` with proper conventional commit messages:
+
+1. **Version Calculation**: semantic-release analyzes commit messages and determines the next version
+2. **Version Updates**: Updates both `package.json` and `src/metadata.json` with the new version
+3. **Changelog**: Generates/updates `CHANGELOG.md` with release notes
+4. **Git Tag**: Creates a git tag for the release
+5. **GitHub Release**: Creates a GitHub release with generated notes
+
+Both `package.json` version and `metadata.json` `version-name` will be updated to match, while `metadata.json` `version` (GNOME extension version) will be incremented automatically.
+
 ### Debugging
 
 - Watch extensions logs
