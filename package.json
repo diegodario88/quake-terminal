@@ -1,7 +1,7 @@
 {
   "name": "quake-terminal",
   "description": "Quickly launch a terminal in Quake mode using a keyboard shortcut",
-  "version": "1.6.9",
+  "version": "1.0.0",
   "private": true,
   "repository": {
     "type": "git",
