@@ -381,7 +381,8 @@ export const QuakeMode = class {
         );
 
         const exec = info.get_string("Exec");
-        let fullCommand = `${exec} ${launchArgs}`;
+        const cleanedExec = this._cleanDesktopFileExec(exec);
+        let fullCommand = `${cleanedExec} ${launchArgs}`;
 
         try {
           const [success, argv] = GLib.shell_parse_argv(fullCommand);
@@ -717,5 +718,52 @@ export const QuakeMode = class {
     } finally {
       if (cancelId > 0) cancellable.disconnect(cancelId);
     }
+  }
+
+  /**
+   * Cleans desktop file Exec field by removing field codes that are not applicable
+   * for terminal launching in quake mode.
+   *
+   * According to Desktop Entry Specification, field codes include:
+   * %f - single file name
+   * %F - multiple file names
+   * %u - single URL
+   * %U - multiple URLs
+   * %d - deprecated (single directory name)
+   * %D - deprecated (multiple directory names)
+   * %n - deprecated (single filename without path)
+   * %N - deprecated (multiple filenames without path)
+   * %i - icon field prefixed by --icon
+   * %c - translated name of the application
+   * %k - location of desktop file
+   * %v - deprecated (device)
+   * %% - literal percent sign
+   *
+   * For terminal applications in quake mode, we don't pass any files or URLs,
+   * so we remove these field codes except for %%.
+   *
+   * @param {string} exec - The Exec field from the desktop file
+   * @returns {string} The cleaned Exec command
+   */
+  _cleanDesktopFileExec(exec) {
+    if (!exec) {
+      return "";
+    }
+
+    // Handle %% first (literal percent sign) by temporarily replacing it
+    const tempReplacement = "___PERCENT_PLACEHOLDER___";
+    let cleaned = exec.replace(/%%/g, tempReplacement);
+
+    // Remove all standard desktop file field codes
+    // Match % followed by a letter (case insensitive)
+    cleaned = cleaned.replace(/%[fFuUdDnNickv]/g, "");
+
+    // Restore literal percent signs
+    cleaned = cleaned.replace(new RegExp(tempReplacement, "g"), "%");
+
+    // Clean up any extra whitespace that might be left
+    cleaned = cleaned.replace(/\s+/g, " ").trim();
+
+    return cleaned;
   }
 };
