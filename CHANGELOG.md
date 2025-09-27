@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/diegodario88/quake-terminal/compare/v1.0.0...v1.0.1) (2025-09-27)
+
+
+### Bug Fixes
+
+* **#59:** clean desktop file exec field ([#64](https://github.com/diegodario88/quake-terminal/issues/64)) ([6ed2caf](https://github.com/diegodario88/quake-terminal/commit/6ed2cafe1fbd2241877905129731807fccdfb615)), closes [#59](https://github.com/diegodario88/quake-terminal/issues/59)
+
 # 1.0.0 (2025-09-20)
 
 
