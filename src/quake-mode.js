@@ -280,11 +280,10 @@ export const QuakeMode = class {
       return this._hideTerminalWithAnimationBottomUp();
     }
 
+    this._fitTerminalToMainMonitor();
     if (this.terminalWindow.is_hidden()) {
       return this._showTerminalWithAnimationTopDown();
     }
-
-    console.log(this.terminalWindow.get_pid);
 
     Main.activateWindow(this.terminalWindow);
   }
