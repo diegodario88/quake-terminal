@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/diegodario88/quake-terminal/compare/v1.0.1...v1.0.2) (2025-10-02)
+
+
+### Bug Fixes
+
+* fit terminal to window before showing it ([#65](https://github.com/diegodario88/quake-terminal/issues/65)) ([18fe189](https://github.com/diegodario88/quake-terminal/commit/18fe189d9454f5ca94d4d778977dac7af38c5bb7))
+
 ## [1.0.1](https://github.com/diegodario88/quake-terminal/compare/v1.0.0...v1.0.1) (2025-09-27)
 
 
