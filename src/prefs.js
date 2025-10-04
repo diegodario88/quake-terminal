@@ -576,7 +576,7 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
       title: _("Vertical Size"),
       subtitle: _("Terminal vertical distance as a percentage"),
       adjustment: new Gtk.Adjustment({
-        lower: 30,
+        lower: 10,
         step_increment: 5,
         upper: 100,
         value: settings.get_int("vertical-size"),
