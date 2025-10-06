@@ -1,3 +1,10 @@
+## [1.0.3](https://github.com/diegodario88/quake-terminal/compare/v1.0.2...v1.0.3) (2025-10-06)
+
+
+### Bug Fixes
+
+* Reduce Vertical Size lower limit to 10 percent ([#67](https://github.com/diegodario88/quake-terminal/issues/67)) ([0f9de40](https://github.com/diegodario88/quake-terminal/commit/0f9de40beafd53b7f65bcc17061e75d7831f8992))
+
 ## [1.0.2](https://github.com/diegodario88/quake-terminal/compare/v1.0.1...v1.0.2) (2025-10-02)
 
 
