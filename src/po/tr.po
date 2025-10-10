@@ -1,0 +1,249 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Osman KARAGÖZ <osmank3@gmail.com>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Quake Terminal\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-08-01 19:16+0300\n"
+"PO-Revision-Date: 2025-10-09 17:36+0300\n"
+"Last-Translator: Osman KARAGÖZ <osmank3@gmail.com>\n"
+"Language-Team: \n"
+"Language: tr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.6\n"
+
+#: ../src/extension.js:68
+msgid "Select an application in Quake Terminal preferences."
+msgstr "Quake Uçbirim ayarlarından bir uygulama seçin."
+
+#: ../src/prefs.js:164
+msgid "Quake Terminal Settings"
+msgstr "Quake Uçbirim Ayarları"
+
+#: ../src/prefs.js:168
+msgid "Application"
+msgstr "Uygulama"
+
+#: ../src/prefs.js:181
+msgid "Terminal Application"
+msgstr "Uçbirim Uygulaması"
+
+#: ../src/prefs.js:267
+msgid "Launch Options"
+msgstr "Başlatma Seçenekleri"
+
+#: ../src/prefs.js:269
+msgid ""
+"Optional command-line arguments to customize how the terminal starts for "
+"this application. For example: -o font_size=18"
+msgstr ""
+"Bu uygulamanın uçbirimi başlatması için isteğe bağlı komut-satırı "
+"parametreleri. Örneğin: -o font_size=18"
+
+#: ../src/prefs.js:341
+msgid "General"
+msgstr "Genel"
+
+#: ../src/prefs.js:349
+msgid "Toggle Shortcut"
+msgstr "Açma/Kapama Kısayolu"
+
+#: ../src/prefs.js:350
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:12
+msgid "Shortcut to activate the terminal application"
+msgstr "Uçbirim uygulamasını etkinleştirmek için kısayol"
+
+#: ../src/prefs.js:354
+msgid "Select a shortcut"
+msgstr "Kısayol seçin"
+
+#: ../src/prefs.js:368
+msgid "Enter new shortcut to toggle Quake Terminal"
+msgstr "Quake Uçbirim için yeni kısayol girin"
+
+#: ../src/prefs.js:378
+msgid "Set Shortcut"
+msgstr "Kısayol Ayarla"
+
+#: ../src/prefs.js:430
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:47
+msgid "Auto Hide Terminal"
+msgstr "Uçbirimi Otomatik Gizle"
+
+#: ../src/prefs.js:432
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:48
+msgid "When enabled, this hides the Terminal window when it loses focus"
+msgstr "Etkinleştirildiğinde, Uçbirim penceresi odağı kaybettiğinde gizlenir"
+
+#: ../src/prefs.js:446
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:32
+msgid "Show on the current Display"
+msgstr "Mevcut Ekranda Göster"
+
+#: ../src/prefs.js:448
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:33
+msgid ""
+"When enabled, the Terminal will be shown on the Display that currently has "
+"the mouse pointer"
+msgstr ""
+"Etkinleştirildiğinde, Uçbirim fare işaretçisinin olduğu Ekranda "
+"görüntülenir"
+
+#: ../src/prefs.js:462
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:37
+msgid "Show on the primary Display"
+msgstr "Birincil ekranda göster"
+
+#: ../src/prefs.js:464
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:38
+msgid ""
+"When enabled, the Terminal will be shown on the Display set as Primary in "
+"Gnome Display settings"
+msgstr ""
+"Etkinleştirildiğinde, Uçbirim Gnome Ekran Ayarlarında belirlenen Birincil "
+"Ekranda gösterilir"
+
+#: ../src/prefs.js:493
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:42
+msgid "Display"
+msgstr "Ekran"
+
+#: ../src/prefs.js:494
+msgid "Which display should the terminal be rendered on"
+msgstr "Uçbirimin hangi ekranda gösterileceği"
+
+#: ../src/prefs.js:545
+msgid "Animation Time"
+msgstr "Animasyon Süresi"
+
+#: ../src/prefs.js:546
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:58
+msgid "Duration of the dropdown animation in milliseconds"
+msgstr "Yukarıdan inmenin milisaniye cinsinden süresi"
+
+#: ../src/prefs.js:564
+msgid "Position"
+msgstr "Konum"
+
+#: ../src/prefs.js:571
+msgid "Vertical Size"
+msgstr "Dikey Boyut"
+
+#: ../src/prefs.js:572
+msgid "Terminal vertical distance as a percentage"
+msgstr "Uçbirimin yüzde olarak dikey uzunluğu"
+
+#: ../src/prefs.js:591
+msgid "Horizontal Size"
+msgstr "Yatay Boyut"
+
+#: ../src/prefs.js:592
+msgid "Terminal horizontal distance as a percentage"
+msgstr "Uçbirimin yüzde olarak yatay uzunluğu"
+
+#: ../src/prefs.js:614
+msgid "Left"
+msgstr "Sol"
+
+#: ../src/prefs.js:614
+msgid "Right"
+msgstr "Sağ"
+
+#: ../src/prefs.js:614
+msgid "Center"
+msgstr "Merkez"
+
+#: ../src/prefs.js:621
+msgid "Horizontal Alignment"
+msgstr "Yatay Yerleşim"
+
+#: ../src/prefs.js:622
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:28
+msgid "Control the value for horizontal alignment"
+msgstr "Yatay yerleşim için kontrol değeri"
+
+#: ../src/prefs.js:640
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:52
+msgid "Always On Top"
+msgstr "Daima Üstte"
+
+#: ../src/prefs.js:642
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:53
+msgid ""
+"When enabled, terminal window will appear on top of all other non-topmost "
+"windows"
+msgstr ""
+"Etkinleştirildiğinde, uçbirim pencesesi diğer tüm pencerelerin üzerinde "
+"belirir"
+
+#: ../src/prefs.js:656
+msgid "Hide In Certain Modes"
+msgstr "Belirli Modlarda Gizle"
+
+#: ../src/prefs.js:658
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:63
+msgid ""
+"When enabled, the terminal window will not appear in overview mode or when "
+"using Alt+Tab."
+msgstr ""
+"Etkinleştirildiğinde, uçbirim penceresi pencerelerin önizlemesinde veya "
+"Alt+Tab ile uygulama seçiminde görünmez."
+
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:6
+msgid "Terminal App"
+msgstr "Uçbirim Uygulaması"
+
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:7
+msgid ""
+"The application path used as a reference when initializing a new terminal"
+msgstr "Yeni uçbirim hazırlanırken kullanılacak uygulama konumu referansı"
+
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:11
+msgid "Toggle Terminal"
+msgstr "Uçbirimi Aç/Kapa"
+
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:16
+msgid "Terminal Vertical Size"
+msgstr "Uçbirim Dikey Boyutu"
+
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:17
+msgid "Specify the vertical size of the terminal in percentage"
+msgstr "Uçbirimin dikey boyutunu yüzde olarak belirtin"
+
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:21
+msgid "Terminal Horizontal Size"
+msgstr "Uçbirim Yatay Boyutu"
+
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:22
+msgid "Specify the horizontal size of the terminal in percentage"
+msgstr "Uçbirimin yatay boyutunu yüzde olarak belirtin"
+
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:27
+msgid "Terminal Horizontal Alignment"
+msgstr "Uçbirim Yatay Yerleşimi"
+
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:43
+msgid "Specify the display where the terminal should be rendered"
+msgstr "Uçbirimin gösterileceği ekranı belirtin"
+
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:57
+msgid "Animation time"
+msgstr "Animasyon süresi"
+
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:62
+msgid "Hide terminal window in certain modes"
+msgstr "Belirli modlarda uçbirim penceresini gizle"
+
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:67
+msgid "Terminal launch arguments per application"
+msgstr "Uygulama başına uçbirim başlatma parametresi"
+
+#: ../src/schemas/org.gnome.shell.extensions.quake-terminal.gschema.xml:68
+msgid "Dictionary mapping application IDs to their terminal launch arguments"
+msgstr "Uygulama ID'sini uçbirim başlatma parametrelerine ekle"
