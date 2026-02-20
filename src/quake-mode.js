@@ -583,7 +583,7 @@ export const QuakeMode = class {
     const terminalWindow = this.terminalWindow;
     const shouldSkipTaskbar = this._settings.get_boolean("skip-taskbar");
 
-    Object.defineProperty(terminalWindow, "skip_taskbar", {
+    Object.defineProperty(terminalWindow, "skipTaskbar", {
       get() {
         if (terminalWindow && shouldSkipTaskbar) {
           return true;
