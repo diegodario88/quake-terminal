@@ -1,3 +1,10 @@
+## [1.0.4](https://github.com/diegodario88/quake-terminal/compare/v1.0.3...v1.0.4) (2026-02-25)
+
+
+### Bug Fixes
+
+* skip-taskbar property name for Wayland compat ([#76](https://github.com/diegodario88/quake-terminal/issues/76)) ([cc00e6d](https://github.com/diegodario88/quake-terminal/commit/cc00e6d5333afca158aa4234b19f5323c318bea1)), closes [#75](https://github.com/diegodario88/quake-terminal/issues/75)
+
 ## [1.0.3](https://github.com/diegodario88/quake-terminal/compare/v1.0.2...v1.0.3) (2025-10-06)
 
 
