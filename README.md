@@ -12,6 +12,8 @@
 
 https://github.com/diegodario88/quake-terminal/assets/25825145/eb49d9a2-e918-4f22-8ddb-25486c2cd91b
 
+> [!TIP] The terminal used in this demo is **Alacritty** with window decorations disabled for a seamless look.
+
 ## Settings
 
 ![Settings](assets/screenshot-settings.png)
