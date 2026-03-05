@@ -3,7 +3,10 @@ import GLib from "gi://GLib";
 import Gio from "gi://Gio";
 import Shell from "gi://Shell";
 import Meta from "gi://Meta";
+import { PACKAGE_VERSION } from "resource:///org/gnome/shell/misc/config.js";
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
+
+const SHELL_VERSION = Number.parseInt(PACKAGE_VERSION.split(".")[0]);
 
 const STARTUP_TIMER_IN_SECONDS = 5;
 
@@ -32,7 +35,7 @@ export const QuakeMode = class {
    */
   constructor(terminal, settings) {
     console.log(
-      `*** QuakeTerminal@constructor - IsWayland = ${Meta.is_wayland_compositor()} ***`
+      `*** QuakeTerminal@constructor - IsWayland = ${SHELL_VERSION >= 50 || Meta.is_wayland_compositor()} ***`
     );
     console.log(
       `*** QuakeTerminal@constructor - Terminal App = ${terminal.get_name()} ***`
