@@ -189,6 +189,18 @@ export const QuakeMode = class {
   }
 
   get monitorDisplayScreenIndex() {
+    if (this._settings.get_boolean("render-on-leftmost-monitor")) {
+      return this._getMonitorIndexByPosition("leftmost");
+    }
+
+    if (this._settings.get_boolean("render-on-center-monitor")) {
+      return this._getMonitorIndexByPosition("center");
+    }
+
+    if (this._settings.get_boolean("render-on-rightmost-monitor")) {
+      return this._getMonitorIndexByPosition("rightmost");
+    }
+
     if (this._settings.get_boolean("render-on-current-monitor")) {
       return Shell.Global.get().display.get_current_monitor();
     }
@@ -206,6 +218,30 @@ export const QuakeMode = class {
       userSelectionDisplayIndex <= availableDisplaysIndexes
     ) {
       return userSelectionDisplayIndex;
+    }
+
+    return Shell.Global.get().display.get_primary_monitor();
+  }
+
+  /**
+   * Gets the monitor index by physical position on the X axis.
+   *
+   * @param {"leftmost" | "center" | "rightmost"} position - Desired position
+   * @returns {number} The monitor index matching that position
+   */
+  _getMonitorIndexByPosition(position) {
+    const sorted = [...Main.layoutManager.monitors].sort((a, b) => a.x - b.x);
+
+    if (position === "leftmost") {
+      return sorted[0].index;
+    }
+
+    if (position === "rightmost") {
+      return sorted[sorted.length - 1].index;
+    }
+
+    if (position === "center") {
+      return sorted[Math.floor(sorted.length / 2)].index;
     }
 
     return Shell.Global.get().display.get_primary_monitor();

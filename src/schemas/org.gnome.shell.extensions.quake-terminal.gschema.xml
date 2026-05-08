@@ -37,6 +37,21 @@
 			<summary>Show on the primary Display</summary>
   		<description>When enabled, the Terminal will be shown on the Display set as Primary in Gnome Display settings</description>
 		</key>
+		<key name="render-on-leftmost-monitor" type="b">
+			<default>false</default>
+			<summary>Show on the leftmost Display</summary>
+			<description>When enabled, the Terminal will be shown on the leftmost Display based on its physical position</description>
+		</key>
+		<key name="render-on-center-monitor" type="b">
+			<default>false</default>
+			<summary>Show on the center Display</summary>
+			<description>When enabled, the Terminal will be shown on the center Display based on its physical position</description>
+		</key>
+		<key name="render-on-rightmost-monitor" type="b">
+			<default>false</default>
+			<summary>Show on the rightmost Display</summary>
+			<description>When enabled, the Terminal will be shown on the rightmost Display based on its physical position</description>
+		</key>
 		<key name="monitor-screen" type="i">
 			<default>0</default>
 			<summary>Display</summary>
