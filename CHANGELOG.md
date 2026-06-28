@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/diegodario88/quake-terminal/compare/v1.1.0...v1.2.0) (2026-06-28)
+
+
+### Features
+
+* add support for relative position display choices ([#83](https://github.com/diegodario88/quake-terminal/issues/83)) ([b82ba80](https://github.com/diegodario88/quake-terminal/commit/b82ba80b2f7091c376521079126659951bf44d67))
+
 # [1.1.0](https://github.com/diegodario88/quake-terminal/compare/v1.0.4...v1.1.0) (2026-03-05)
 
 
