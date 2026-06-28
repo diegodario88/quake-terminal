@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/diegodario88/quake-terminal/compare/v1.2.0...v1.2.1) (2026-06-28)
+
+
+### Bug Fixes
+
+* prevent TypeError when _handleQuakeModeTerminal returns undefined ([08d8e43](https://github.com/diegodario88/quake-terminal/commit/08d8e43494e9ce079ee8f264df7cfbe0610e1ffa))
+
 # [1.2.0](https://github.com/diegodario88/quake-terminal/compare/v1.1.0...v1.2.0) (2026-06-28)
 
 
