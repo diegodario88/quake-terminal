@@ -478,6 +478,54 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
       Gio.SettingsBindFlags.DEFAULT
     );
 
+    // Render on leftmost Monitor
+    const renderOnLeftmostMonitor = new Adw.SwitchRow({
+      title: _("Show on the leftmost Display"),
+      subtitle: _(
+        "When enabled, the Terminal will be shown on the leftmost Display based on its physical position"
+      ),
+    });
+    generalSettingsGroup.add(renderOnLeftmostMonitor);
+
+    settings.bind(
+      "render-on-leftmost-monitor",
+      renderOnLeftmostMonitor,
+      "active",
+      Gio.SettingsBindFlags.DEFAULT
+    );
+
+    // Render on center Monitor
+    const renderOnCenterMonitor = new Adw.SwitchRow({
+      title: _("Show on the center Display"),
+      subtitle: _(
+        "When enabled, the Terminal will be shown on the center Display based on its physical position"
+      ),
+    });
+    generalSettingsGroup.add(renderOnCenterMonitor);
+
+    settings.bind(
+      "render-on-center-monitor",
+      renderOnCenterMonitor,
+      "active",
+      Gio.SettingsBindFlags.DEFAULT
+    );
+
+    // Render on rightmost Monitor
+    const renderOnRightmostMonitor = new Adw.SwitchRow({
+      title: _("Show on the rightmost Display"),
+      subtitle: _(
+        "When enabled, the Terminal will be shown on the rightmost Display based on its physical position"
+      ),
+    });
+    generalSettingsGroup.add(renderOnRightmostMonitor);
+
+    settings.bind(
+      "render-on-rightmost-monitor",
+      renderOnRightmostMonitor,
+      "active",
+      Gio.SettingsBindFlags.DEFAULT
+    );
+
     // Monitor Screen
     const monitorScreenModel = new Gio.ListStore({
       item_type: GenericObjectModel.$gtype,
@@ -506,7 +554,10 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
       selected: settings.get_int("monitor-screen"),
       sensitive:
         !settings.get_boolean("render-on-current-monitor") &&
-        !settings.get_boolean("render-on-primary-monitor"),
+        !settings.get_boolean("render-on-primary-monitor") &&
+        !settings.get_boolean("render-on-leftmost-monitor") &&
+        !settings.get_boolean("render-on-center-monitor") &&
+        !settings.get_boolean("render-on-rightmost-monitor"),
     });
 
     generalSettingsGroup.add(monitorRow);
@@ -515,35 +566,32 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
       settings.set_int("monitor-screen", monitorRow.selected);
     });
 
-    // watch for render-on-current-monitor changes
-    settings.connect("changed::render-on-current-monitor", () => {
-      // set render-on-primary-monitor to false when render-on-current-monitor was set to true
-      if (
-        settings.get_boolean("render-on-current-monitor") &&
-        settings.get_boolean("render-on-primary-monitor")
-      ) {
-        settings.set_boolean("render-on-primary-monitor", false);
-      }
-      // disable selecting a monitor screen
-      monitorRow.set_sensitive(
-        !settings.get_boolean("render-on-current-monitor")
-      );
-    });
+    // Mutual exclusivity for all monitor toggles
+    const allMonitorToggles = [
+      "render-on-current-monitor",
+      "render-on-primary-monitor",
+      "render-on-leftmost-monitor",
+      "render-on-center-monitor",
+      "render-on-rightmost-monitor",
+    ];
 
-    // watch for render-on-primary-monitor changes
-    settings.connect("changed::render-on-primary-monitor", () => {
-      // set render-on-current-monitor to false when render-on-primary-monitor was set to true
-      if (
-        settings.get_boolean("render-on-primary-monitor") &&
-        settings.get_boolean("render-on-current-monitor")
-      ) {
-        settings.set_boolean("render-on-current-monitor", false);
-      }
-      // disable selecting a monitor screen
-      monitorRow.set_sensitive(
-        !settings.get_boolean("render-on-primary-monitor")
-      );
-    });
+    for (const toggleKey of allMonitorToggles) {
+      settings.connect(`changed::${toggleKey}`, () => {
+        if (settings.get_boolean(toggleKey)) {
+          for (const otherKey of allMonitorToggles) {
+            if (otherKey !== toggleKey && settings.get_boolean(otherKey)) {
+              settings.set_boolean(otherKey, false);
+            }
+          }
+          monitorRow.set_sensitive(false);
+        } else {
+          const anyActive = allMonitorToggles.some((k) =>
+            settings.get_boolean(k)
+          );
+          monitorRow.set_sensitive(!anyActive);
+        }
+      });
+    }
 
     // Animation Time
     const animationTime = new Adw.SpinRow({
