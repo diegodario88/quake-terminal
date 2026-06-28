@@ -63,7 +63,7 @@ export default class QuakeTerminalExtension extends Extension {
         this._quakeMode._internalState === QuakeMode.LIFECYCLE.STARTING ||
         this._quakeMode._internalState === QuakeMode.LIFECYCLE.CREATED_ACTOR
       ) {
-        return;
+        return Promise.resolve();
       }
     }
 
@@ -75,14 +75,14 @@ export default class QuakeTerminalExtension extends Extension {
 
       if (!terminalId) {
         Main.notify(_(`Select an application in Quake Terminal preferences.`));
-        return;
+        return Promise.resolve();
       }
 
       const terminal = this._appSystem.lookup_app(terminalId);
 
       if (!terminal) {
         Main.notify(_(`No terminal found with id ${terminalId}. Skipping ...`));
-        return;
+        return Promise.resolve();
       }
 
       this._quakeMode = new QuakeMode(terminal, this._settings);
