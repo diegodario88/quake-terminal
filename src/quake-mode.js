@@ -10,6 +10,19 @@ const SHELL_VERSION = Number.parseInt(PACKAGE_VERSION.split(".")[0]);
 
 const STARTUP_TIMER_IN_SECONDS = 5;
 
+const _DEBUG = false;
+
+/**
+ * Helper function for debug logging.
+ *
+ * @param {string} message - The message to log.
+ */
+function _log(message) {
+  if (_DEBUG) {
+    console.log(message);
+  }
+}
+
 /**
  * Quake Mode Module
  *
@@ -34,10 +47,10 @@ export const QuakeMode = class {
    * @param {Gio.Settings} settings - The Gio.Settings object for configuration.
    */
   constructor(terminal, settings) {
-    console.log(
+    _log(
       `*** QuakeTerminal@constructor - IsWayland = ${SHELL_VERSION >= 50 || Meta.is_wayland_compositor()} ***`
     );
-    console.log(
+    _log(
       `*** QuakeTerminal@constructor - Terminal App = ${terminal.get_name()} ***`
     );
 
@@ -109,17 +122,17 @@ export const QuakeMode = class {
 
   get terminalWindow() {
     if (!this._terminal) {
-      console.log(
+      _log(
         `*** QuakeTerminal@terminalWindow - There's no terminal application ***`
       );
-      console.log(
+      _log(
         `*** QuakeTerminal@terminalWindow - Current state ${this._internalState}  ***`
       );
       return null;
     }
 
     if (!this._terminalWindow) {
-      console.log(
+      _log(
         `*** QuakeTerminal@terminalWindow - There's no WindowActor, finding one ... ***`
       );
       let ourWindow = this._terminal.get_windows().find((w) => {
@@ -141,7 +154,7 @@ export const QuakeMode = class {
         this._terminalWindowUnmanagedId = this._terminalWindow.connect(
           "unmanaged",
           () => {
-            console.log(
+            _log(
               `*** QuakeTerminal@Unmanaged Called unmanaged after suspend or lockscreen ***`
             );
             this.destroy();
@@ -155,7 +168,7 @@ export const QuakeMode = class {
 
   get actor() {
     if (!this.terminalWindow) {
-      console.log(`*** QuakeTerminal@actor - There's no terminalWindow ***`);
+      _log(`*** QuakeTerminal@actor - There's no terminalWindow ***`);
       return null;
     }
 
@@ -167,7 +180,7 @@ export const QuakeMode = class {
     const actor = this.terminalWindow.get_compositor_private();
 
     if (!actor) {
-      console.log(`*** QuakeTerminal@actor - There's no actor ***`);
+      _log(`*** QuakeTerminal@actor - There's no actor ***`);
       return null;
     }
 
@@ -248,7 +261,7 @@ export const QuakeMode = class {
   }
 
   destroy() {
-    console.log(`*** QuakeTerminal@destroy - Starting destroy action ***`);
+    _log(`*** QuakeTerminal@destroy - Starting destroy action ***`);
     if (this._sourceTimeoutLoopId) {
       GLib.Source.remove(this._sourceTimeoutLoopId);
       this._sourceTimeoutLoopId = null;
@@ -305,7 +318,7 @@ export const QuakeMode = class {
         await this._launchTerminalWindow();
         this._adjustTerminalWindowPosition();
       } catch (error) {
-        console.log(`*** QuakeTerminal@toggle - Catch error ${error} ***`);
+        _log(`*** QuakeTerminal@toggle - Catch error ${error} ***`);
         this.destroy();
         return;
       }
@@ -340,7 +353,7 @@ export const QuakeMode = class {
     }
 
     const info = this._terminal.get_app_info();
-    console.log(
+    _log(
       `*** QuakeTerminal@_launchTerminalWindow - launching a new window for terminal ${info.get_name()}  ***`
     );
     const launchArgsMap =
@@ -364,7 +377,7 @@ export const QuakeMode = class {
           }
 
           if (this._internalState !== QuakeMode.LIFECYCLE.STARTING) {
-            console.log(
+            _log(
               `*** QuakeTerminal@_launchTerminalWindow - Not in STARTING state, ignoring windows-changed signal ***`
             );
 
@@ -399,7 +412,7 @@ export const QuakeMode = class {
           this._terminalWindowUnmanagedId = this.terminalWindow.connect(
             "unmanaged",
             () => {
-              console.log(`*** QuakeTerminal@Unmanaged Called unmanaged ***`);
+              _log(`*** QuakeTerminal@Unmanaged Called unmanaged ***`);
               this.destroy();
             }
           );
@@ -458,7 +471,7 @@ export const QuakeMode = class {
    */
   _adjustTerminalWindowPosition() {
     if (!this.terminalWindow || !this.actor) {
-      console.log(
+      _log(
         `*** QuakeTerminal@_adjustTerminalWindowPosition - No terminalWindow || actor ***`
       );
       return;
@@ -471,7 +484,7 @@ export const QuakeMode = class {
       /** @type {Meta.WindowActor} */ metaWindowActor
     ) => {
       if (metaWindowActor !== this.actor) {
-        console.log(
+        _log(
           `*** QuakeTerminal@mapSignalHandler - ${metaWindowActor.get_name()} is not our actor, skipping. ***`
         );
         return;
@@ -497,12 +510,12 @@ export const QuakeMode = class {
       this._actorStageViewChangedId = this.actor.connect(
         "stage-views-changed",
         () => {
-          console.log(
+          _log(
             `*** QuakeTerminal@_adjustTerminalWindowPosition - State ${this._internalState} ***`
           );
 
           if (this._internalState !== QuakeMode.LIFECYCLE.CREATED_ACTOR) {
-            console.log(
+            _log(
               `*** QuakeTerminal@_adjustTerminalWindowPosition - Not in CREATED_ACTOR state, ignoring stage-views-changed signal ***`
             );
             this.actor.disconnect(this._actorStageViewChangedId);
