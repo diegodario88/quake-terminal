@@ -1,3 +1,10 @@
+## [1.2.3](https://github.com/diegodario88/quake-terminal/compare/v1.2.2...v1.2.3) (2026-06-29)
+
+
+### Bug Fixes
+
+* **quake-mode:** add fallback timeout for stuck CREATED_ACTOR state ([e60f64c](https://github.com/diegodario88/quake-terminal/commit/e60f64c6b0ffe1d831c077324680bae1ec2121cf))
+
 ## [1.2.2](https://github.com/diegodario88/quake-terminal/compare/v1.2.1...v1.2.2) (2026-06-29)
 
 
