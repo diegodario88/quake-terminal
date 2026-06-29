@@ -1,3 +1,10 @@
+## [1.2.2](https://github.com/diegodario88/quake-terminal/compare/v1.2.1...v1.2.2) (2026-06-29)
+
+
+### Bug Fixes
+
+* Ignore wl-clipboard windows to prevent focus stealing ([#58](https://github.com/diegodario88/quake-terminal/issues/58)) ([8888bad](https://github.com/diegodario88/quake-terminal/commit/8888badc1188951c2121e0f12fc159213d845f29))
+
 ## [1.2.1](https://github.com/diegodario88/quake-terminal/compare/v1.2.0...v1.2.1) (2026-06-28)
 
 
