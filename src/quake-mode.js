@@ -39,18 +39,15 @@ function _log(message) {
  * @param {Meta.Window} win - The window to check.
  * @returns {boolean} True if the window is a wl-clipboard window, false otherwise.
  */
-export function is_wlclipboard(win) {
+export async function is_wlclipboard(win) {
   if (!win) return false;
-
   if (win.get_client_type() !== Meta.WindowClientType.WAYLAND) return false;
-
   if (win.title !== "wl-clipboard") return false;
-
   const pid = win.get_pid();
-
   try {
-    const [, bytes] = GLib.file_get_contents(`/proc/${pid}/cmdline`);
-    const argv0_bytes = bytes.slice(0, bytes.indexOf(0));
+    const file = Gio.File.new_for_path(`/proc/${pid}/cmdline`);
+    const [contents] = await file.load_contents_async(null);
+    const argv0_bytes = contents.slice(0, contents.indexOf(0));
     const argv0 = new TextDecoder().decode(argv0_bytes);
     return ["wl-copy", "wl-paste"].includes(GLib.path_get_basename(argv0));
   } catch {
@@ -466,9 +463,12 @@ export const QuakeMode = class {
           this._terminalWindowFocusId = Shell.Global.get().display.connect(
             "notify::focus-window",
             (source) => {
-              this._handleHideOnFocusLoss(source);
+              this._handleHideOnFocusLoss(source).catch((e) =>
+                _log(`*** QuakeTerminal@focus-window - ${e} ***`)
+              );
             }
           );
+
           resolve(true);
         };
 
@@ -781,7 +781,7 @@ export const QuakeMode = class {
    *
    * @param {Meta.Display} source - The display object.
    */
-  _handleHideOnFocusLoss(source) {
+  async _handleHideOnFocusLoss(source) {
     const shouldAutoHide = this._settings.get_boolean("auto-hide-window");
 
     if (!shouldAutoHide) {
@@ -792,7 +792,7 @@ export const QuakeMode = class {
       return;
     }
 
-    if (is_wlclipboard(source.focus_window)) {
+    if (await is_wlclipboard(source.focus_window)) {
       return;
     }
 
