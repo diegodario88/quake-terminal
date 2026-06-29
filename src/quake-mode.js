@@ -10,6 +10,13 @@ const SHELL_VERSION = Number.parseInt(PACKAGE_VERSION.split(".")[0]);
 
 const STARTUP_TIMER_IN_SECONDS = 5;
 
+/**
+ * How long (seconds) to wait for `stage-views-changed` after the actor is
+ * created before giving up and positioning the terminal anyway (CREATED_ACTOR
+ * → RUNNING fallback).
+ */
+const CREATED_ACTOR_TIMEOUT_IN_SECONDS = 5;
+
 const _DEBUG = false;
 
 /**
@@ -33,14 +40,11 @@ function _log(message) {
  * @returns {boolean} True if the window is a wl-clipboard window, false otherwise.
  */
 export function is_wlclipboard(win) {
-  if (!win)
-    return false;
+  if (!win) return false;
 
-  if (win.get_client_type() !== Meta.WindowClientType.WAYLAND)
-    return false;
+  if (win.get_client_type() !== Meta.WindowClientType.WAYLAND) return false;
 
-  if (win.title !== 'wl-clipboard')
-    return false;
+  if (win.title !== "wl-clipboard") return false;
 
   const pid = win.get_pid();
 
@@ -48,7 +52,7 @@ export function is_wlclipboard(win) {
     const [, bytes] = GLib.file_get_contents(`/proc/${pid}/cmdline`);
     const argv0_bytes = bytes.slice(0, bytes.indexOf(0));
     const argv0 = new TextDecoder().decode(argv0_bytes);
-    return ['wl-copy', 'wl-paste'].includes(GLib.path_get_basename(argv0));
+    return ["wl-copy", "wl-paste"].includes(GLib.path_get_basename(argv0));
   } catch {
     return false;
   }
@@ -72,6 +76,11 @@ export const QuakeMode = class {
   };
 
   /**
+   * The default timeout (in seconds) for force-moving from CREATED_ACTOR to
+   * RUNNING. This guards against the window/actor appearing but a subsequent
+   * GNOME signal never firing, leaving _internalState stuck and all further
+   * shortcut presses silently dropped.
+  /**
    * Creates a new QuakeMode instance.
    *
    * @param {Shell.App} terminal - The terminal application instance.
@@ -93,6 +102,7 @@ export const QuakeMode = class {
     this._internalState = QuakeMode.LIFECYCLE.READY;
 
     this._sourceTimeoutLoopId = null;
+    this._stageViewFallbackTimeoutId = null;
     this._terminalWindowUnmanagedId = null;
     this._terminalWindowFocusId = null;
     this._wmMapSignalId = null;
@@ -296,6 +306,11 @@ export const QuakeMode = class {
     if (this._sourceTimeoutLoopId) {
       GLib.Source.remove(this._sourceTimeoutLoopId);
       this._sourceTimeoutLoopId = null;
+    }
+
+    if (this._stageViewFallbackTimeoutId) {
+      GLib.Source.remove(this._stageViewFallbackTimeoutId);
+      this._stageViewFallbackTimeoutId = null;
     }
 
     if (this._settingsWatchingListIds.length && this._settings) {
@@ -532,34 +547,67 @@ export const QuakeMode = class {
       wm.emit("kill-window-effects", this.actor);
 
       /**
-       * Listens once for the `Clutter.Actor::stage-views-changed` signal, which should be emitted
-       * right before the terminal resizing is complete. Even if the terminal does not need to be
-       * resized, this signal should be emitted correctly by Mutter.
+       * Helper that performs the CREATED_ACTOR → RUNNING transition exactly
+       * once, whether triggered by the `stage-views-changed` signal or the
+       * fallback safety timer.  Whichever fires first wins; the other is
+       * cancelled/disconnected immediately.
        *
        * @see https://mutter.gnome.org/clutter/signal.Actor.stage-views-changed.html
        */
+      const advanceToRunning = () => {
+        // Cancel the fallback timer if the signal fires first.
+        if (this._stageViewFallbackTimeoutId) {
+          GLib.Source.remove(this._stageViewFallbackTimeoutId);
+          this._stageViewFallbackTimeoutId = null;
+        }
+
+        // Disconnect the signal listener (safe even if already disconnected).
+        if (this._actorStageViewChangedId && this.actor) {
+          this.actor.disconnect(this._actorStageViewChangedId);
+          this._actorStageViewChangedId = null;
+        }
+
+        if (this._internalState !== QuakeMode.LIFECYCLE.CREATED_ACTOR) {
+          _log(
+            `*** QuakeTerminal@advanceToRunning - Not in CREATED_ACTOR state (${this._internalState}), ignoring. ***`
+          );
+          return;
+        }
+
+        _log(`*** QuakeTerminal@advanceToRunning - Advancing to RUNNING ***`);
+        this._internalState = QuakeMode.LIFECYCLE.RUNNING;
+        this._fitTerminalToMainMonitor();
+        this._showTerminalWithAnimationTopDown();
+      };
+
       this._actorStageViewChangedId = this.actor.connect(
         "stage-views-changed",
         () => {
           _log(
-            `*** QuakeTerminal@_adjustTerminalWindowPosition - State ${this._internalState} ***`
+            `*** QuakeTerminal@_adjustTerminalWindowPosition - stage-views-changed received, state ${this._internalState} ***`
           );
-
-          if (this._internalState !== QuakeMode.LIFECYCLE.CREATED_ACTOR) {
-            _log(
-              `*** QuakeTerminal@_adjustTerminalWindowPosition - Not in CREATED_ACTOR state, ignoring stage-views-changed signal ***`
-            );
-            this.actor.disconnect(this._actorStageViewChangedId);
-            this._actorStageViewChangedId = null;
-            return;
-          }
-
-          this._internalState = QuakeMode.LIFECYCLE.RUNNING;
-          this._showTerminalWithAnimationTopDown();
+          advanceToRunning();
         }
       );
 
-      this._fitTerminalToMainMonitor();
+      /**
+       * Safety net: if `stage-views-changed` never arrives (e.g. the signal
+       * is skipped on certain compositors/drivers), force the transition after
+       * CREATED_ACTOR_TIMEOUT_IN_SECONDS so the shortcut is never permanently
+       * locked out.
+       */
+      this._stageViewFallbackTimeoutId = GLib.timeout_add_seconds(
+        GLib.PRIORITY_DEFAULT,
+        CREATED_ACTOR_TIMEOUT_IN_SECONDS,
+        () => {
+          this._stageViewFallbackTimeoutId = null;
+          _log(
+            `*** QuakeTerminal@_adjustTerminalWindowPosition - stage-views-changed fallback timeout fired (state=${this._internalState}) ***`
+          );
+          advanceToRunning();
+          return GLib.SOURCE_REMOVE;
+        }
+      );
     };
 
     this._wmMapSignalId = Shell.Global.get().window_manager.connect(
