@@ -1,3 +1,10 @@
+## [1.2.4](https://github.com/diegodario88/quake-terminal/compare/v1.2.3...v1.2.4) (2026-06-29)
+
+
+### Bug Fixes
+
+* EGO-X-004 warning ([2d23f4f](https://github.com/diegodario88/quake-terminal/commit/2d23f4fae287126303af644865acd887b62af563))
+
 ## [1.2.3](https://github.com/diegodario88/quake-terminal/compare/v1.2.2...v1.2.3) (2026-06-29)
 
 
