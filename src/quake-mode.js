@@ -359,7 +359,14 @@ export const QuakeMode = class {
     if (!this.terminalWindow) {
       try {
         await this._launchTerminalWindow();
-        this._adjustTerminalWindowPosition();
+
+        // When the `map` signal was missed, _adjustTerminalWindowPosition()
+        // advances straight to RUNNING and shows the terminal synchronously.
+        // Running the focus/hide/show logic below on top of that would
+        // immediately undo the show, since the window is now focused.
+        if (this._adjustTerminalWindowPosition()) {
+          return;
+        }
       } catch (error) {
         _log(`*** QuakeTerminal@toggle - Catch error ${error} ***`);
         this.destroy();
@@ -525,6 +532,42 @@ export const QuakeMode = class {
 
     this.terminalWindow.stick();
 
+    // Defined at this scope so the unconditional fallback timer below can also
+    // call it when the `map` signal fired before our handler was connected.
+    const advanceToRunning = () => {
+      if (this._stageViewFallbackTimeoutId) {
+        GLib.Source.remove(this._stageViewFallbackTimeoutId);
+        this._stageViewFallbackTimeoutId = null;
+      }
+      if (this._actorStageViewChangedId && this.actor) {
+        this.actor.disconnect(this._actorStageViewChangedId);
+        this._actorStageViewChangedId = null;
+      }
+      if (this._wmMapSignalId) {
+        Shell.Global.get().window_manager.disconnect(this._wmMapSignalId);
+        this._wmMapSignalId = null;
+      }
+      if (this._internalState !== QuakeMode.LIFECYCLE.CREATED_ACTOR) return;
+      _log(`*** QuakeTerminal@advanceToRunning - Advancing to RUNNING ***`);
+      this._internalState = QuakeMode.LIFECYCLE.RUNNING;
+      this._fitTerminalToMainMonitor();
+      this._showTerminalWithAnimationTopDown();
+    };
+
+    if (this.actor.is_mapped()) {
+      // The `map` signal already fired before we could connect to it (the
+      // race behind #85). By the time the actor is mapped, its stage views
+      // have already settled too, so `stage-views-changed` will never fire
+      // again for it.
+      _log(
+        `*** QuakeTerminal@_adjustTerminalWindowPosition - actor already mapped, missed map signal, advancing immediately ***`
+      );
+      this.actor.opacity = 0;
+      Shell.Global.get().window_manager.emit("kill-window-effects", this.actor);
+      advanceToRunning();
+      return true;
+    }
+
     const mapSignalHandler = (
       /** @type {Shell.WM} */ wm,
       /** @type {Meta.WindowActor} */ metaWindowActor
@@ -536,50 +579,9 @@ export const QuakeMode = class {
         return;
       }
       this.actor.opacity = 0;
-
-      // This code should run exclusively during the initial creation of the terminal application
-      // to ensure an immediate disconnection, we turn off the signal.
       Shell.Global.get().window_manager.disconnect(this._wmMapSignalId);
       this._wmMapSignalId = null;
-
-      // Since our terminal application has his own "drop-down" showing animation, we must get rid of any other effect
-      // that the windows have when they are created.
       wm.emit("kill-window-effects", this.actor);
-
-      /**
-       * Helper that performs the CREATED_ACTOR → RUNNING transition exactly
-       * once, whether triggered by the `stage-views-changed` signal or the
-       * fallback safety timer.  Whichever fires first wins; the other is
-       * cancelled/disconnected immediately.
-       *
-       * @see https://mutter.gnome.org/clutter/signal.Actor.stage-views-changed.html
-       */
-      const advanceToRunning = () => {
-        // Cancel the fallback timer if the signal fires first.
-        if (this._stageViewFallbackTimeoutId) {
-          GLib.Source.remove(this._stageViewFallbackTimeoutId);
-          this._stageViewFallbackTimeoutId = null;
-        }
-
-        // Disconnect the signal listener (safe even if already disconnected).
-        if (this._actorStageViewChangedId && this.actor) {
-          this.actor.disconnect(this._actorStageViewChangedId);
-          this._actorStageViewChangedId = null;
-        }
-
-        if (this._internalState !== QuakeMode.LIFECYCLE.CREATED_ACTOR) {
-          _log(
-            `*** QuakeTerminal@advanceToRunning - Not in CREATED_ACTOR state (${this._internalState}), ignoring. ***`
-          );
-          return;
-        }
-
-        _log(`*** QuakeTerminal@advanceToRunning - Advancing to RUNNING ***`);
-        this._internalState = QuakeMode.LIFECYCLE.RUNNING;
-        this._fitTerminalToMainMonitor();
-        this._showTerminalWithAnimationTopDown();
-      };
-
       this._actorStageViewChangedId = this.actor.connect(
         "stage-views-changed",
         () => {
@@ -589,30 +591,24 @@ export const QuakeMode = class {
           advanceToRunning();
         }
       );
-
-      /**
-       * Safety net: if `stage-views-changed` never arrives (e.g. the signal
-       * is skipped on certain compositors/drivers), force the transition after
-       * CREATED_ACTOR_TIMEOUT_IN_SECONDS so the shortcut is never permanently
-       * locked out.
-       */
-      this._stageViewFallbackTimeoutId = GLib.timeout_add_seconds(
-        GLib.PRIORITY_DEFAULT,
-        CREATED_ACTOR_TIMEOUT_IN_SECONDS,
-        () => {
-          this._stageViewFallbackTimeoutId = null;
-          _log(
-            `*** QuakeTerminal@_adjustTerminalWindowPosition - stage-views-changed fallback timeout fired (state=${this._internalState}) ***`
-          );
-          advanceToRunning();
-          return GLib.SOURCE_REMOVE;
-        }
-      );
     };
 
     this._wmMapSignalId = Shell.Global.get().window_manager.connect(
       "map",
       mapSignalHandler
+    );
+
+    this._stageViewFallbackTimeoutId = GLib.timeout_add_seconds(
+      GLib.PRIORITY_DEFAULT,
+      CREATED_ACTOR_TIMEOUT_IN_SECONDS,
+      () => {
+        this._stageViewFallbackTimeoutId = null;
+        _log(
+          `*** QuakeTerminal@_adjustTerminalWindowPosition - stage-views-changed fallback timeout fired (state=${this._internalState}) ***`
+        );
+        advanceToRunning();
+        return GLib.SOURCE_REMOVE;
+      }
     );
   }
 
