@@ -521,13 +521,15 @@ export const QuakeMode = class {
   /**
    * Adjusts the terminal window's initial position and handles signal connections related
    * to window mapping and sizing.
+   *
+   * @returns {boolean} True when the terminal was advanced to RUNNING immediately.
    */
   _adjustTerminalWindowPosition() {
     if (!this.terminalWindow || !this.actor) {
       _log(
         `*** QuakeTerminal@_adjustTerminalWindowPosition - No terminalWindow || actor ***`
       );
-      return;
+      return false;
     }
 
     this.terminalWindow.stick();
@@ -610,6 +612,8 @@ export const QuakeMode = class {
         return GLib.SOURCE_REMOVE;
       }
     );
+
+    return false;
   }
 
   _shouldAvoidAnimation() {
