@@ -1,3 +1,10 @@
+## [1.2.5](https://github.com/diegodario88/quake-terminal/compare/v1.2.4...v1.2.5) (2026-07-18)
+
+
+### Bug Fixes
+
+* recover from missed map signal during startup ([da795d7](https://github.com/diegodario88/quake-terminal/commit/da795d70acefb4a049e701742ed278cc5e5bae09))
+
 ## [1.2.4](https://github.com/diegodario88/quake-terminal/compare/v1.2.3...v1.2.4) (2026-06-29)
 
 
