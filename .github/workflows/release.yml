@@ -33,6 +33,26 @@ jobs:
       - name: Lint code
         run: npx eslint .
 
+      - name: Install GNOME packaging tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gettext gnome-shell libglib2.0-bin
+
+      - name: Build extension package
+        run: make pack
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Validate extension packaging with Shexli
+        run: |
+          python -m venv venv
+          . venv/bin/activate
+          pip install -U pip shexli
+          shexli "${{ github.workspace }}/quake-terminal@diegodario88.github.io.shell-extension.zip"
+
       - name: Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
