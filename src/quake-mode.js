@@ -387,6 +387,10 @@ export const QuakeMode = class {
       return this._showTerminalWithAnimationTopDown();
     }
 
+    if (this._settings.get_boolean("hide-on-toggle-without-focus")) {
+      return this._hideTerminalWithAnimationBottomUp();
+    }
+
     Main.activateWindow(this.terminalWindow);
   }
 
