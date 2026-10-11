@@ -720,6 +720,22 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
       Gio.SettingsBindFlags.DEFAULT
     );
 
+    // Hide from running apps
+    const hideFromRunningAppsRow = new Adw.SwitchRow({
+      title: _("Hide From Dock"),
+      subtitle: _(
+        "When enabled, the terminal app will not appear as a running app in the dock or app switcher. Useful for terminals that can't hide themselves, like GTK4 terminals."
+      ),
+    });
+    positionSettingsGroup.add(hideFromRunningAppsRow);
+
+    settings.bind(
+      "hide-from-running-apps",
+      hideFromRunningAppsRow,
+      "active",
+      Gio.SettingsBindFlags.DEFAULT
+    );
+
     window.add(page);
     return Promise.resolve();
   }

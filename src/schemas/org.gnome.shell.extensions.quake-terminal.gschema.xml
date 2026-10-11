@@ -77,6 +77,11 @@
 			<summary>Hide terminal window in certain modes</summary>
   		<description>When enabled, the terminal window will not appear in overview mode or when using Alt+Tab.</description>
 		</key>
+		<key name="hide-from-running-apps" type="b">
+			<default>false</default>
+			<summary>Hide terminal app from the running apps list</summary>
+			<description>When enabled, the terminal app will not appear as a running app in the dock or app switcher. Useful for terminals that can't set the skip-taskbar hint themselves, like GTK4 terminals.</description>
+		</key>
     <key name="launch-args-map" type="a{ss}">
       <default>{}</default>
       <summary>Terminal launch arguments per application</summary>

@@ -156,6 +156,15 @@ export const QuakeMode = class {
     );
 
     this._settingsWatchingListIds.push(skipTaskbarSettingsId);
+
+    const hideFromRunningAppsSettingsId = settings.connect(
+      "changed::hide-from-running-apps",
+      () => {
+        this._configureRunningAppsFilter();
+      }
+    );
+
+    this._settingsWatchingListIds.push(hideFromRunningAppsSettingsId);
   }
 
   get terminalWindow() {
@@ -341,6 +350,8 @@ export const QuakeMode = class {
       this._wmMapSignalId = null;
     }
 
+    this._restoreRunningAppsFilter();
+
     this._settingsWatchingListIds = [];
     this._terminal = null;
     this._terminalWindow = null;
@@ -456,6 +467,9 @@ export const QuakeMode = class {
 
           // Keeps the Terminal out of Overview mode and Alt-Tab window switching
           this._configureSkipTaskbarProperty();
+
+          // Keeps the Terminal app out of docks and the running apps list
+          this._configureRunningAppsFilter();
 
           this._handleAlwaysOnTop();
 
@@ -726,6 +740,54 @@ export const QuakeMode = class {
     });
 
     this._isTaskbarConfigured = true;
+  }
+
+  /**
+   * Hides the terminal app from GNOME Shell's running apps list.
+   *
+   * GTK4 terminals (e.g. Ghostty) can't set the skip-taskbar hint themselves,
+   * so `Shell.AppSystem` keeps reporting them as running and docks such as
+   * Ubuntu Dock or Dash to Dock keep showing their icon. When the
+   * `hide-from-running-apps` setting is enabled, we patch `get_running` on the
+   * AppSystem instance to filter out our terminal app.
+   */
+  _configureRunningAppsFilter() {
+    const appSystem = Shell.AppSystem.get_default();
+    const terminal = this._terminal;
+
+    // Drop any previous instance override, falling back to the prototype method
+    // @ts-ignore
+    delete appSystem.get_running;
+
+    if (terminal && this._settings.get_boolean("hide-from-running-apps")) {
+      const originalGetRunning = Shell.AppSystem.prototype.get_running;
+
+      // @ts-ignore
+      appSystem.get_running = function () {
+        return originalGetRunning
+          .call(this)
+          .filter((/** @type {Shell.App} */ app) => app !== terminal);
+      };
+    }
+
+    // Ask listeners (dash, docks) to refresh their running apps
+    if (terminal) {
+      appSystem.emit("app-state-changed", terminal);
+    }
+  }
+
+  /**
+   * Restores the original running apps list behavior.
+   */
+  _restoreRunningAppsFilter() {
+    const appSystem = Shell.AppSystem.get_default();
+
+    // @ts-ignore
+    delete appSystem.get_running;
+
+    if (this._terminal) {
+      appSystem.emit("app-state-changed", this._terminal);
+    }
   }
 
   _configureActorCloseAnimation() {
