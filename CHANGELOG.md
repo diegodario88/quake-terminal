@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/diegodario88/quake-terminal/compare/v1.2.5...v1.3.0) (2026-10-12)
+
+
+### Features
+
+* add GNOME 51 to supported versions ([#90](https://github.com/diegodario88/quake-terminal/issues/90)) ([c217e0d](https://github.com/diegodario88/quake-terminal/commit/c217e0d52085db1f755ade2db4ceca361604131a))
+
 ## [1.2.5](https://github.com/diegodario88/quake-terminal/compare/v1.2.4...v1.2.5) (2026-07-18)
 
 
