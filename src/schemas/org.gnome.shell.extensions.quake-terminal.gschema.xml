@@ -62,6 +62,11 @@
 			<summary>Auto Hide Terminal</summary>
   		<description>When enabled, this hides the Terminal window when it loses focus</description>
 		</key>
+		<key name="hide-on-toggle-without-focus" type="b">
+			<default>false</default>
+			<summary>Hide on Toggle without Focus</summary>
+			<description>When enabled, if the window is not hidden, and out of focus, instead of coming back into focus, hide</description>
+		</key>
 		<key name="always-on-top" type="b">
 			<default>false</default>
 			<summary>Always On Top</summary>

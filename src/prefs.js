@@ -446,6 +446,22 @@ export default class QuakeTerminalPreferences extends ExtensionPreferences {
       Gio.SettingsBindFlags.DEFAULT
     );
 
+    // Hide on Toggle without Focus
+    const hideOnToggleWithoutFocusRow = new Adw.SwitchRow({
+      title: _("Hide on Toggle without Focus"),
+      subtitle: _(
+        "When enabled, if the window is not hidden, and out of focus, instead of coming back into focus, hide"
+      ),
+    });
+    generalSettingsGroup.add(hideOnToggleWithoutFocusRow);
+
+    settings.bind(
+      "hide-on-toggle-without-focus",
+      hideOnToggleWithoutFocusRow,
+      "active",
+      Gio.SettingsBindFlags.DEFAULT
+    );
+
     // Render on current Monitor
     const renderOnCurrentMonitor = new Adw.SwitchRow({
       title: _("Show on the current Display"),
