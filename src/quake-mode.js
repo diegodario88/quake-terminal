@@ -105,6 +105,7 @@ export const QuakeMode = class {
     this._wmMapSignalId = null;
     this._terminalChangedId = null;
     this._actorStageViewChangedId = null;
+    this._clearAnimationClip = null;
 
     /**
      *@type {Meta.Window}
@@ -300,6 +301,7 @@ export const QuakeMode = class {
 
   destroy() {
     _log(`*** QuakeTerminal@destroy - Starting destroy action ***`);
+    this._clearAnimationClip?.();
     if (this._sourceTimeoutLoopId) {
       GLib.Source.remove(this._sourceTimeoutLoopId);
       this._sourceTimeoutLoopId = null;
@@ -624,6 +626,51 @@ export const QuakeMode = class {
     return false;
   }
 
+  /**
+   * Clips animation above the terminal's intended top edge.
+   *
+   * @param {Meta.WindowActor} actor - The animated terminal actor.
+   * @returns {Function} Cleanup for completion or cancellation.
+   */
+  _clipAnimationAboveTerminal(actor) {
+    this._clearAnimationClip?.();
+    const originalClip = actor.has_clip ? actor.get_clip() : null;
+    const top = actor.meta_window.get_frame_rect().y;
+
+    // Actor-local coordinates move with the window; counteract the translation
+    // so the animation stays below the terminal's intended top edge.
+    const updateClip = () => {
+      const [x, y, width, height] = originalClip || [
+        0,
+        0,
+        actor.width,
+        actor.height,
+      ];
+      const clipTop = Math.max(y, top - actor.y - actor.translation_y);
+      actor.set_clip(x, clipTop, width, Math.max(0, y + height - clipTop));
+    };
+    const translationId = actor.connect("notify::translation-y", updateClip);
+    const allocationId = actor.connect("notify::allocation", updateClip);
+    let cleared = false;
+    const clearClip = (destroyed = false) => {
+      if (cleared) return;
+      cleared = true;
+      if (!destroyed) {
+        actor.disconnect(translationId);
+        actor.disconnect(allocationId);
+        actor.disconnect(destroyId);
+        if (originalClip) actor.set_clip(...originalClip);
+        else actor.remove_clip();
+      }
+      if (this._clearAnimationClip === clearClip)
+        this._clearAnimationClip = null;
+    };
+    const destroyId = actor.connect("destroy", () => clearClip(true));
+    this._clearAnimationClip = clearClip;
+    updateClip();
+    return clearClip;
+  }
+
   _showTerminalWithAnimationTopDown() {
     if (this._shouldAvoidAnimation()) {
       return;
@@ -637,6 +684,7 @@ export const QuakeMode = class {
 
     parent.set_child_above_sibling(this.actor, null);
     this.actor.translation_y = this.actor.height * -1;
+    const clearClip = this._clipAnimationAboveTerminal(this.actor);
 
     Main.wm.skipNextEffect(this.actor);
     Main.activateWindow(this.actor.meta_window);
@@ -646,6 +694,7 @@ export const QuakeMode = class {
       translation_y: 0,
       opacity: 255,
       duration: this._settings.get_int("animation-time"),
+      onStopped: () => clearClip(),
       onComplete: () => {
         this._isTransitioning = false;
       },
@@ -657,10 +706,12 @@ export const QuakeMode = class {
       return;
     }
 
+    const clearClip = this._clipAnimationAboveTerminal(this.actor);
     this.actor.ease({
       mode: Clutter.AnimationMode.EASE_OUT_QUAD,
       translation_y: this.actor.height * -1,
       duration: this._settings.get_int("animation-time"),
+      onStopped: () => clearClip(),
       onComplete: () => {
         Main.wm.skipNextEffect(this.actor);
         this.actor.meta_window.minimize();
@@ -760,11 +811,13 @@ export const QuakeMode = class {
        */
       actor.ease = function () {
         actor.ease = originalActorAnimate;
+        const clearClip = self._clipAnimationAboveTerminal(actor);
 
         originalActorAnimate.call(actor, {
           mode: Clutter.AnimationMode.EASE_OUT_QUAD,
           translation_y: actor.height * -1,
           duration: self._settings.get_int("animation-time"),
+          onStopped: () => clearClip(),
           onComplete: () => {
             // @ts-ignore
             Main.wm._destroyWindowDone(Main.wm._shellwm, actor);
