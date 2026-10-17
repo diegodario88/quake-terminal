@@ -17,6 +17,12 @@ const STARTUP_TIMER_IN_SECONDS = 5;
  */
 const CREATED_ACTOR_TIMEOUT_IN_SECONDS = 5;
 
+/**
+ * How long (ms) to wait for the terminal to redraw at its new size on first
+ * launch before showing it anyway.
+ */
+const RESIZE_TIMEOUT_IN_MS = 500;
+
 const _DEBUG = false;
 
 /**
@@ -100,6 +106,8 @@ export const QuakeMode = class {
 
     this._sourceTimeoutLoopId = null;
     this._stageViewFallbackTimeoutId = null;
+    this._resizeSignalId = null;
+    this._resizeTimeoutId = null;
     this._terminalWindowUnmanagedId = null;
     this._terminalWindowFocusId = null;
     this._wmMapSignalId = null;
@@ -311,6 +319,8 @@ export const QuakeMode = class {
       GLib.Source.remove(this._stageViewFallbackTimeoutId);
       this._stageViewFallbackTimeoutId = null;
     }
+
+    this._cancelWaitForResize();
 
     if (this._settingsWatchingListIds.length && this._settings) {
       this._settingsWatchingListIds.forEach((id) => {
@@ -559,8 +569,7 @@ export const QuakeMode = class {
       if (this._internalState !== QuakeMode.LIFECYCLE.CREATED_ACTOR) return;
       _log(`*** QuakeTerminal@advanceToRunning - Advancing to RUNNING ***`);
       this._internalState = QuakeMode.LIFECYCLE.RUNNING;
-      this._fitTerminalToMainMonitor();
-      this._showTerminalWithAnimationTopDown();
+      this._showTerminalAfterResize();
     };
 
     if (this.actor.is_mapped()) {
@@ -725,9 +734,56 @@ export const QuakeMode = class {
     });
   }
 
+  /**
+   * Resizes the terminal, then shows it. On Wayland a resize only lands once
+   * the terminal redraws, so showing it right away would slide in the old
+   * size, e.g. the full width GNOME auto-maximized it to on launch.
+   */
+  _showTerminalAfterResize() {
+    if (!this._fitTerminalToMainMonitor()) {
+      this._showTerminalWithAnimationTopDown();
+      return;
+    }
+
+    const show = () => {
+      this._cancelWaitForResize();
+      this._showTerminalWithAnimationTopDown();
+    };
+
+    this._resizeSignalId = this.terminalWindow.connect("size-changed", show);
+    this._resizeTimeoutId = GLib.timeout_add(
+      GLib.PRIORITY_DEFAULT,
+      RESIZE_TIMEOUT_IN_MS,
+      () => {
+        this._resizeTimeoutId = null;
+        show();
+        return GLib.SOURCE_REMOVE;
+      }
+    );
+  }
+
+  /**
+   * Stops waiting for the resize started by _showTerminalAfterResize().
+   */
+  _cancelWaitForResize() {
+    if (this._resizeTimeoutId) {
+      GLib.Source.remove(this._resizeTimeoutId);
+      this._resizeTimeoutId = null;
+    }
+
+    if (this._resizeSignalId && this.terminalWindow) {
+      this.terminalWindow.disconnect(this._resizeSignalId);
+    }
+    this._resizeSignalId = null;
+  }
+
+  /**
+   * @returns {boolean} True when the window must change size, which happens
+   * asynchronously on Wayland.
+   */
   _fitTerminalToMainMonitor() {
     if (!this.terminalWindow) {
-      return;
+      return false;
     }
     const monitorDisplayScreenIndex = this.monitorDisplayScreenIndex;
     const area = this.terminalWindow.get_work_area_for_monitor(
@@ -768,6 +824,10 @@ export const QuakeMode = class {
       this.terminalWindow.unmaximize(Meta.MaximizeFlags.BOTH);
     }
 
+    const frame = this.terminalWindow.get_frame_rect();
+    const mustResize =
+      frame.width !== terminalWidth || frame.height !== terminalHeight;
+
     this.terminalWindow.move_resize_frame(
       false,
       terminalX,
@@ -775,6 +835,8 @@ export const QuakeMode = class {
       terminalWidth,
       terminalHeight
     );
+
+    return mustResize;
   }
 
   _configureSkipTaskbarProperty() {
