@@ -382,8 +382,8 @@ export const QuakeMode = class {
       return this._hideTerminalWithAnimationBottomUp();
     }
 
-    this._fitTerminalToMainMonitor();
     if (this.terminalWindow.is_hidden()) {
+      this._fitTerminalToMainMonitor();
       return this._showTerminalWithAnimationTopDown();
     }
 
@@ -391,6 +391,7 @@ export const QuakeMode = class {
       return this._hideTerminalWithAnimationBottomUp();
     }
 
+    this._fitTerminalToMainMonitor();
     Main.activateWindow(this.terminalWindow);
   }
 
