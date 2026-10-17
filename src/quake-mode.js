@@ -701,6 +701,17 @@ export const QuakeMode = class {
 
     this.terminalWindow.move_to_monitor(monitorDisplayScreenIndex);
 
+    // GNOME auto-maximizes new windows that are nearly as big as the screen,
+    // and a maximized window ignores the size below. Newer Shells have
+    // is_maximized() and unmaximize() without flags.
+    if (typeof this.terminalWindow.is_maximized === "function") {
+      if (this.terminalWindow.is_maximized()) {
+        this.terminalWindow.unmaximize();
+      }
+    } else if (this.terminalWindow.get_maximized()) {
+      this.terminalWindow.unmaximize(Meta.MaximizeFlags.BOTH);
+    }
+
     this.terminalWindow.move_resize_frame(
       false,
       terminalX,
