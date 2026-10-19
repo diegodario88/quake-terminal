@@ -50,7 +50,7 @@ jobs:
         run: |
           python -m venv venv
           . venv/bin/activate
-          pip install -U pip shexli
+          pip install -U pip "shexli @ git+https://github.com/GNOME/extensions-web.git@d959a9707bb41414e6a7a552be1b05db233a8382#subdirectory=shexli"
           shexli "${{ github.workspace }}/quake-terminal@diegodario88.github.io.shell-extension.zip"
 
       - name: Release
