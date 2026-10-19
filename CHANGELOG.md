@@ -1,3 +1,19 @@
+# [1.4.0](https://github.com/diegodario88/quake-terminal/compare/v1.3.0...v1.4.0) (2026-10-19)
+
+
+### Bug Fixes
+
+* avoid moving unfocused terminal before hiding ([822c6ff](https://github.com/diegodario88/quake-terminal/commit/822c6ffda8d7af91c768fbb8671f9f83c948f914)), closes [#87](https://github.com/diegodario88/quake-terminal/issues/87)
+* clip animation above the terminal ([373de97](https://github.com/diegodario88/quake-terminal/commit/373de97db1f464c4cc6430a3ffb07314e8559d20)), closes [#28](https://github.com/diegodario88/quake-terminal/issues/28)
+* show the terminal at its final size on first launch ([b8fa63f](https://github.com/diegodario88/quake-terminal/commit/b8fa63f7cd17419d42a818bc95118262e859f5cd)), closes [#32](https://github.com/diegodario88/quake-terminal/issues/32)
+* support GNOME 49 maximize API ([008b26e](https://github.com/diegodario88/quake-terminal/commit/008b26e9f75ef31379603c563d8a4c90830dcaee))
+* unmaximize the terminal before resizing it ([1f8f0c3](https://github.com/diegodario88/quake-terminal/commit/1f8f0c3b98906200e43322ed71e55d450c806bc1))
+
+
+### Features
+
+* hide on toggle without focus ([32c36c6](https://github.com/diegodario88/quake-terminal/commit/32c36c6697884cc4fa527a12bd054293ccd17d01))
+
 # [1.3.0](https://github.com/diegodario88/quake-terminal/compare/v1.2.5...v1.3.0) (2026-10-12)
 
 
