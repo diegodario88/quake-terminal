@@ -814,14 +814,19 @@ export const QuakeMode = class {
     this.terminalWindow.move_to_monitor(monitorDisplayScreenIndex);
 
     // GNOME auto-maximizes new windows that are nearly as big as the screen,
-    // and a maximized window ignores the size below. Newer Shells have
-    // is_maximized() and unmaximize() without flags.
-    if (typeof this.terminalWindow.is_maximized === "function") {
+    // and a maximized window ignores the size below. GNOME 49 removed the
+    // flags parameter and renamed get_maximized() to is_maximized().
+    if (SHELL_VERSION >= 49) {
       if (this.terminalWindow.is_maximized()) {
         this.terminalWindow.unmaximize();
       }
-    } else if (this.terminalWindow.get_maximized()) {
-      this.terminalWindow.unmaximize(Meta.MaximizeFlags.BOTH);
+    } else {
+      const getMaximized = this.terminalWindow.get_maximized;
+      if (getMaximized.call(this.terminalWindow)) {
+        const unmaximize = this.terminalWindow.unmaximize;
+        const maximizeFlags = Meta.MaximizeFlags;
+        unmaximize.call(this.terminalWindow, maximizeFlags.BOTH);
+      }
     }
 
     const frame = this.terminalWindow.get_frame_rect();
