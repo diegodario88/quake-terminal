@@ -740,6 +740,8 @@ export const QuakeMode = class {
    * size, e.g. the full width GNOME auto-maximized it to on launch.
    */
   _showTerminalAfterResize() {
+    this._cancelWaitForResize();
+
     if (!this._fitTerminalToMainMonitor()) {
       this._showTerminalWithAnimationTopDown();
       return;
