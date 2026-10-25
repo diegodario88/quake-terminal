@@ -1,3 +1,10 @@
+## [1.4.1](https://github.com/diegodario88/quake-terminal/compare/v1.4.0...v1.4.1) (2026-10-25)
+
+
+### Bug Fixes
+
+* cancel pending resize timeout before retrying ([d01df3e](https://github.com/diegodario88/quake-terminal/commit/d01df3e3a601c8663d6be42722e03ba0aab29144))
+
 # [1.4.0](https://github.com/diegodario88/quake-terminal/compare/v1.3.0...v1.4.0) (2026-10-19)
 
 
