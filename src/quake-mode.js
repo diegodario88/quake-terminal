@@ -394,6 +394,8 @@ export const QuakeMode = class {
       return this._hideTerminalWithAnimationBottomUp();
     }
 
+    this._moveTerminalToActiveWorkspace();
+
     if (this.terminalWindow.is_hidden()) {
       this._fitTerminalToMainMonitor();
       return this._showTerminalWithAnimationTopDown();
@@ -777,6 +779,34 @@ export const QuakeMode = class {
       this.terminalWindow.disconnect(this._resizeSignalId);
     }
     this._resizeSignalId = null;
+  }
+
+  /**
+   * Moves the terminal to the workspace the user is currently on.
+   *
+   * `Main.activateWindow()` switches to the workspace the window was last
+   * shown on, which takes the user away from their current workspace instead
+   * of bringing the terminal to them.
+   *
+   * @returns {void}
+   */
+  _moveTerminalToActiveWorkspace() {
+    if (!this.terminalWindow || this.terminalWindow.is_on_all_workspaces()) {
+      return;
+    }
+
+    const activeWorkspace =
+      Shell.Global.get().workspace_manager.get_active_workspace();
+
+    if (!activeWorkspace) {
+      return;
+    }
+
+    if (this.terminalWindow.get_workspace() === activeWorkspace) {
+      return;
+    }
+
+    this.terminalWindow.change_workspace(activeWorkspace);
   }
 
   /**
