@@ -843,7 +843,13 @@ export const QuakeMode = class {
           (area.width - terminalWidth) / horizontalAlignmentSettingsValue
       );
 
-    this.terminalWindow.move_to_monitor(monitorDisplayScreenIndex);
+    // Mutter keeps fullscreen and maximized windows on their current monitor,
+    // so move_to_monitor() is ignored for them. Leave fullscreen here and
+    // restore it once the terminal is on the target monitor.
+    const wasFullscreen = this.terminalWindow.is_fullscreen();
+    if (wasFullscreen) {
+      this.terminalWindow.unmake_fullscreen();
+    }
 
     // GNOME auto-maximizes new windows that are nearly as big as the screen,
     // and a maximized window ignores the size below. GNOME 49 removed the
@@ -861,6 +867,8 @@ export const QuakeMode = class {
       }
     }
 
+    this.terminalWindow.move_to_monitor(monitorDisplayScreenIndex);
+
     const frame = this.terminalWindow.get_frame_rect();
     const mustResize =
       frame.width !== terminalWidth || frame.height !== terminalHeight;
@@ -872,6 +880,10 @@ export const QuakeMode = class {
       terminalWidth,
       terminalHeight
     );
+
+    if (wasFullscreen) {
+      this.terminalWindow.make_fullscreen();
+    }
 
     return mustResize;
   }
