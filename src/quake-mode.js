@@ -394,6 +394,8 @@ export const QuakeMode = class {
       return this._hideTerminalWithAnimationBottomUp();
     }
 
+    this._moveTerminalToActiveWorkspace();
+
     if (this.terminalWindow.is_hidden()) {
       this._fitTerminalToMainMonitor();
       return this._showTerminalWithAnimationTopDown();
@@ -780,6 +782,34 @@ export const QuakeMode = class {
   }
 
   /**
+   * Moves the terminal to the workspace the user is currently on.
+   *
+   * `Main.activateWindow()` switches to the workspace the window was last
+   * shown on, which takes the user away from their current workspace instead
+   * of bringing the terminal to them.
+   *
+   * @returns {void}
+   */
+  _moveTerminalToActiveWorkspace() {
+    if (!this.terminalWindow || this.terminalWindow.is_on_all_workspaces()) {
+      return;
+    }
+
+    const activeWorkspace =
+      Shell.Global.get().workspace_manager.get_active_workspace();
+
+    if (!activeWorkspace) {
+      return;
+    }
+
+    if (this.terminalWindow.get_workspace() === activeWorkspace) {
+      return;
+    }
+
+    this.terminalWindow.change_workspace(activeWorkspace);
+  }
+
+  /**
    * @returns {boolean} True when the window must change size, which happens
    * asynchronously on Wayland.
    */
@@ -813,7 +843,13 @@ export const QuakeMode = class {
           (area.width - terminalWidth) / horizontalAlignmentSettingsValue
       );
 
-    this.terminalWindow.move_to_monitor(monitorDisplayScreenIndex);
+    // Mutter keeps fullscreen and maximized windows on their current monitor,
+    // so move_to_monitor() is ignored for them. Leave fullscreen here and
+    // restore it once the terminal is on the target monitor.
+    const wasFullscreen = this.terminalWindow.is_fullscreen();
+    if (wasFullscreen) {
+      this.terminalWindow.unmake_fullscreen();
+    }
 
     // GNOME auto-maximizes new windows that are nearly as big as the screen,
     // and a maximized window ignores the size below. GNOME 49 removed the
@@ -831,6 +867,8 @@ export const QuakeMode = class {
       }
     }
 
+    this.terminalWindow.move_to_monitor(monitorDisplayScreenIndex);
+
     const frame = this.terminalWindow.get_frame_rect();
     const mustResize =
       frame.width !== terminalWidth || frame.height !== terminalHeight;
@@ -842,6 +880,10 @@ export const QuakeMode = class {
       terminalWidth,
       terminalHeight
     );
+
+    if (wasFullscreen) {
+      this.terminalWindow.make_fullscreen();
+    }
 
     return mustResize;
   }
