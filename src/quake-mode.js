@@ -120,6 +120,7 @@ export const QuakeMode = class {
      */
     this._terminalWindow = null;
     this._isTaskbarConfigured = null;
+    this._runningAppsFilter = null;
 
     /** We will monkey-patch this method. Let's store the original one. */
     // @ts-ignore
@@ -374,6 +375,22 @@ export const QuakeMode = class {
   }
 
   /**
+   * Picks up a quake window that already exists, e.g. after the screen was
+   * unlocked (locking disables and re-enables the extension), and re-applies
+   * the running apps filter without waiting for the next toggle.
+   *
+   * @returns {boolean} Whether an existing window was adopted.
+   */
+  adoptExistingWindow() {
+    if (!this.terminalWindow) {
+      return false;
+    }
+
+    this._configureRunningAppsFilter();
+    return true;
+  }
+
+  /**
    * Toggles the visibility of the terminal window with animations.
    *
    * @returns {Promise<void>} A promise that resolves when the toggle operation is complete.
@@ -399,6 +416,15 @@ export const QuakeMode = class {
 
     if (!this._isTaskbarConfigured) {
       this._configureSkipTaskbarProperty();
+    }
+
+    // Re-apply after re-adopting an existing window (e.g. after the screen
+    // was locked, which disables and re-enables the extension)
+    if (
+      !this._runningAppsFilter &&
+      this._settings.get_boolean("hide-from-running-apps")
+    ) {
+      this._configureRunningAppsFilter();
     }
 
     if (this.terminalWindow.has_focus()) {

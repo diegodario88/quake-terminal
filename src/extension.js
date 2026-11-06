@@ -43,6 +43,8 @@ export default class QuakeTerminalExtension extends Extension {
       () =>
         this._handleQuakeModeTerminal().catch((reason) => console.log(reason))
     );
+
+    this._adoptExistingQuakeWindow();
   }
 
   disable() {
@@ -55,6 +57,33 @@ export default class QuakeTerminalExtension extends Extension {
     this._settings = null;
     this._appSystem = null;
     this._quakeMode = null;
+  }
+
+  /**
+   * Locking the screen disables and re-enables the extension, which leaves
+   * the quake window running but unmanaged. When the terminal is hidden from
+   * the running apps list, adopt that window right away so its dock icon
+   * doesn't come back until the next shortcut press.
+   */
+  _adoptExistingQuakeWindow() {
+    if (!this._settings.get_boolean("hide-from-running-apps")) {
+      return;
+    }
+
+    const terminal = this._appSystem.lookup_app(
+      this._settings.get_string("terminal-id")
+    );
+
+    const hasQuakeWindow = terminal
+      ?.get_windows()
+      .some((w) => w.get_compositor_private()?.get_name() === "quake-terminal");
+
+    if (!terminal || !hasQuakeWindow) {
+      return;
+    }
+
+    this._quakeMode = new QuakeMode(terminal, this._settings);
+    this._quakeMode.adoptExistingWindow();
   }
 
   _handleQuakeModeTerminal() {
