@@ -884,26 +884,49 @@ export const QuakeMode = class {
    * GTK4 terminals (e.g. Ghostty) can't set the skip-taskbar hint themselves,
    * so `Shell.AppSystem` keeps reporting them as running and docks such as
    * Ubuntu Dock or Dash to Dock keep showing their icon. When the
-   * `hide-from-running-apps` setting is enabled, we patch `get_running` on the
+   * `hide-from-running-apps` setting is enabled, we wrap `get_running` on the
    * AppSystem instance to filter out our terminal app.
+   *
+   * `Shell.AppSystem` is a session-global object, so the wrapper preserves
+   * whatever `get_running` was installed before (another extension's own
+   * override, or the prototype method) and the exact own property descriptor,
+   * so it can be put back untouched.
    */
   _configureRunningAppsFilter() {
     const appSystem = Shell.AppSystem.get_default();
     const terminal = this._terminal;
 
-    // Drop any previous instance override, falling back to the prototype method
-    // @ts-ignore
-    delete appSystem.get_running;
+    this._removeRunningAppsFilter();
 
     if (terminal && this._settings.get_boolean("hide-from-running-apps")) {
-      const originalGetRunning = Shell.AppSystem.prototype.get_running;
+      const previous = Object.getOwnPropertyDescriptor(
+        appSystem,
+        "get_running"
+      );
+      const originalGetRunning =
+        (previous && "get" in previous
+          ? previous.get?.call(appSystem)
+          : previous?.value) ?? Shell.AppSystem.prototype.get_running;
 
-      // @ts-ignore
-      appSystem.get_running = function () {
-        return originalGetRunning
-          .call(this)
-          .filter((/** @type {Shell.App} */ app) => app !== terminal);
+      const filter = (/** @type {Shell.AppSystem} */ ...args) => {
+        const apps = originalGetRunning.apply(appSystem, args);
+
+        // If another extension wrapped us and we could not unwrap, stop
+        // filtering once this filter is no longer active.
+        if (this._runningAppsFilter?.filter !== filter) {
+          return apps;
+        }
+
+        return apps.filter((/** @type {Shell.App} */ app) => app !== terminal);
       };
+
+      this._runningAppsFilter = { filter, previous };
+      Object.defineProperty(appSystem, "get_running", {
+        value: filter,
+        writable: true,
+        configurable: true,
+        enumerable: previous?.enumerable ?? false,
+      });
     }
 
     // Ask listeners (dash, docks) to refresh their running apps
@@ -913,16 +936,41 @@ export const QuakeMode = class {
   }
 
   /**
+   * Removes our `get_running` wrapper, restoring the previous own property
+   * descriptor (or none) exactly. If another extension replaced `get_running`
+   * after us, it is left in place rather than clobbered.
+   */
+  _removeRunningAppsFilter() {
+    const state = this._runningAppsFilter;
+
+    if (!state) {
+      return;
+    }
+
+    this._runningAppsFilter = null;
+    const appSystem = Shell.AppSystem.get_default();
+    const current = Object.getOwnPropertyDescriptor(appSystem, "get_running");
+
+    if (current?.value !== state.filter) {
+      return;
+    }
+
+    if (state.previous) {
+      Object.defineProperty(appSystem, "get_running", state.previous);
+    } else {
+      // @ts-ignore
+      delete appSystem.get_running;
+    }
+  }
+
+  /**
    * Restores the original running apps list behavior.
    */
   _restoreRunningAppsFilter() {
-    const appSystem = Shell.AppSystem.get_default();
-
-    // @ts-ignore
-    delete appSystem.get_running;
+    this._removeRunningAppsFilter();
 
     if (this._terminal) {
-      appSystem.emit("app-state-changed", this._terminal);
+      Shell.AppSystem.get_default().emit("app-state-changed", this._terminal);
     }
   }
 
